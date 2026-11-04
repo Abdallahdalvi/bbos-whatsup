@@ -25,6 +25,7 @@ public class MediaViewerActivity extends Activity {
     private VideoView videoPlayer;
     private ImageView imagePlayer;
     private DocumentPreview documentPreview;
+    private boolean destroyed;
 
     @Override
     public void onCreate(Bundle state) {
@@ -114,8 +115,11 @@ public class MediaViewerActivity extends Activity {
             catch (LinkageError unsupported) { CrashReporter.report(this,"image_zoom_compatibility",unsupported); image=new ImageView(this); }
             image.setScaleType(ImageView.ScaleType.FIT_CENTER);
             image.setFocusable(true); imagePlayer=image;
-            Bitmap bitmap = decodeSampled(file.getAbsolutePath(), 1200, 1200);
-            if (bitmap != null) image.setImageBitmap(bitmap);
+            final ImageView target=image;
+            new android.os.AsyncTask<Void,Void,Bitmap>(){
+                protected Bitmap doInBackground(Void... ignored){try{return decodeSampled(file.getAbsolutePath(),800,800);}catch(OutOfMemoryError pressure){return null;}}
+                protected void onPostExecute(Bitmap bitmap){if(isFinishing()||destroyed){if(bitmap!=null)bitmap.recycle();return;}if(bitmap!=null)target.setImageBitmap(bitmap);}
+            }.executeOnExecutor(AppExecutors.PRELOAD);
             root.addView(image, new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
         } else if ("video".equals(type)) {
@@ -336,10 +340,12 @@ public class MediaViewerActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        destroyed=true;
         if(documentPreview!=null)documentPreview.close();
         if (videoPlayer != null) videoPlayer.stopPlayback();
         if (player != null) {
-            try { player.release(); } catch (Exception ignored) { }
+            final MediaPlayer retired=player;
+            AppExecutors.MEDIA_CLEANUP.execute(new Runnable(){public void run(){try{retired.release();}catch(RuntimeException ignored){}}});
             player = null;
         }
         super.onDestroy();

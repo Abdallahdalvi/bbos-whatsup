@@ -245,7 +245,7 @@ public class MainActivity extends BaseActivity {
             if(tab==TAB_CALLS)try{row=new JSONObject(row.toString());row.put("sender",row.optString("peer_jid"));String name=ConversationCache.name(row.optString("peer_jid"));row.put("senderName",name.length()>0?name:row.optString("name","Contact"));row.put("createdAtMs",row.optLong("started"));row.put("message",row.optString("direction")+" · "+row.optString("outcome"));}catch(Exception ignored){}
             if(tab!=TAB_GROUPS||row.optBoolean("is_group",false))next.add(row);
         }
-        if(cachedTab==tab&&cachedRows.toString().equals(next.toString()))return;
+        if(cachedTab==tab&&cachedRows.equals(next))return;
         cachedTab=tab;
         cachedRows.clear();cachedRows.addAll(next);applyFilter();
     }

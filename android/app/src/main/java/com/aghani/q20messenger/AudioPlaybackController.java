@@ -34,8 +34,8 @@ final class AudioPlaybackController {
     int duration() { try { return player == null || loading ? 0 : player.getDuration(); } catch (IllegalStateException error) { return 0; } }
     void seek(int position) { if (player != null && !loading) { player.seekTo(position); notifyListeners(); } }
     void pause() { if (loading) { generation++; release(); id = -1; } else if (isPlaying()) player.pause(); handler.removeCallbacks(clock); notifyListeners(); }
-    void close() { closed = true; generation++; release(); listeners.clear(); }
-    private void release() { handler.removeCallbacks(clock); if (player != null) { player.release(); player = null; } loading = false; }
+    void close() { closed = true; generation++; listeners.clear(); release(); }
+    private void release() { handler.removeCallbacks(clock); final MediaPlayer retired=player;player=null;loading=false;if(retired!=null)AppExecutors.MEDIA_CLEANUP.execute(new Runnable(){public void run(){try{retired.release();}catch(RuntimeException ignored){}}}); }
     private void notifyListeners() { for (Listener listener : new HashSet<Listener>(listeners)) listener.changed(); }
 
     void toggle(final JSONObject message) {
@@ -65,13 +65,13 @@ final class AudioPlaybackController {
                     player.setAudioStreamType(AudioManager.STREAM_MUSIC);
                     player.setDataSource(file.getAbsolutePath());
                     player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                        public void onPrepared(MediaPlayer ready) { loading = false; ready.start(); handler.post(clock); }
+                        public void onPrepared(MediaPlayer ready) { if(closed||generation!=request||player!=ready)return;loading = false; ready.start(); handler.post(clock); }
                     });
                     player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                        public void onCompletion(MediaPlayer complete) { handler.removeCallbacks(clock); notifyListeners(); }
+                        public void onCompletion(MediaPlayer complete) { if(closed||player!=complete)return;handler.removeCallbacks(clock); notifyListeners(); }
                     });
                     player.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-                        public boolean onError(MediaPlayer broken, int what, int extra) { failed("This audio format could not be played. You can save the original from the message menu."); return true; }
+                        public boolean onError(MediaPlayer broken, int what, int extra) { if(!closed&&player==broken)failed("This audio format could not be played. You can save the original from the message menu."); return true; }
                     });
                     player.prepareAsync();
                 } catch (Exception failure) { failed(failure.getMessage()); }

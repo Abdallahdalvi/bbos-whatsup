@@ -1,4 +1,4 @@
-# Install Q20 Messenger 0.15.0-beta
+# Install Q20 Messenger 0.16.0-beta
 
 Install `Q20Messenger.apk` over the existing app. This release is Android-only; keep the Nokia4Ever server on its current 0.13 version. Do not upload or run the server updater for this release. The APK keeps the existing app signing key and upgrades the local database in place.
 
@@ -8,11 +8,12 @@ The listener restarts after reboot/package replacement when enabled. BlackBerry'
 
 ## Download
 
-Use `output/Q20Messenger.apk`. Its SHA-256 is recorded in the release summary when packaged. No server patch is required for 0.15.
+Use `output/Q20Messenger.apk`. Its SHA-256 is recorded in the release summary when packaged. No server patch is required for 0.16.
 
 ## Source
 
 `Q20Messenger-source.zip` contains Android source, tests, build scripts and reports without the private API token. The personalized server patch/updater archives are retained for the existing 0.13 backend only and are not part of this Android installation step.
 
 After installation, open the app once and confirm Settings > Background calls and messages is enabled. Keep the ongoing listening notification active. Test a call with the screen on, then another with the phone asleep.
+
 

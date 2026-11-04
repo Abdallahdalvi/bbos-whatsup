@@ -15,10 +15,10 @@ import com.shockwave.pdfium.*;
 /** Offline PDF pages and paged XLS/XLSX cell viewing; originals remain available to Save. */
 final class DocumentPreview extends LinearLayout {
     private final Activity activity; private final File file; private final boolean pdf;
-    private final ExecutorService worker=Executors.newSingleThreadExecutor();
+    private final ExecutorService worker=Executors.newSingleThreadExecutor(new ThreadFactory(){public Thread newThread(final Runnable work){return new Thread(new Runnable(){public void run(){android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);work.run();}},"Q20-document");}});
     private final Handler handler=new Handler();
     private final TextView status; private final Button previous,next,sheetButton,left,right;
-    private final ImageView image; private final android.webkit.WebView table;
+    private final ImageView image; private final SpreadsheetPreview table;
     private int page,sheet,column; private boolean busy,closed; private String[] sheetNames=new String[0];
     static boolean supports(File file,String mime){String name=file.getName().toLowerCase(Locale.US);return mime.equals("application/pdf")||name.endsWith(".pdf")||name.endsWith(".xls")||name.endsWith(".xlsx")||mime.equals("application/vnd.ms-excel")||mime.equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");}
     DocumentPreview(Activity activity,File file,String mime) {
@@ -40,10 +40,7 @@ final class DocumentPreview extends LinearLayout {
             sheets.addView(left,new LinearLayout.LayoutParams(Ui.dp(activity,40),Ui.dp(activity,34)));
             sheets.addView(sheetButton,new LinearLayout.LayoutParams(0,Ui.dp(activity,34),1));
             sheets.addView(right,new LinearLayout.LayoutParams(Ui.dp(activity,40),Ui.dp(activity,34)));addView(sheets);
-            table=new android.webkit.WebView(activity);table.setBackgroundColor(0xff10181d);
-            table.getSettings().setJavaScriptEnabled(false);table.getSettings().setAllowFileAccess(false);table.getSettings().setAllowContentAccess(false);
-            table.getSettings().setBuiltInZoomControls(true);table.getSettings().setDisplayZoomControls(false);
-            table.setWebViewClient(new android.webkit.WebViewClient(){@Override public boolean shouldOverrideUrlLoading(android.webkit.WebView v,String url){return true;}});
+            table=new SpreadsheetPreview(activity);
             addView(table,new LinearLayout.LayoutParams(-1,0,1));
             left.setOnClickListener(new OnClickListener(){public void onClick(View v){if(!busy){column=Math.max(0,column-SpreadsheetReader.COLS);load();}}});
             right.setOnClickListener(new OnClickListener(){public void onClick(View v){if(!busy){column+=SpreadsheetReader.COLS;load();}}});
@@ -70,7 +67,7 @@ final class DocumentPreview extends LinearLayout {
                         if(pageCount==0)throw new IOException("PDF has no pages");int index=Math.min(selectedPage,pageCount-1);core.openPage(document,index);
                         int width=core.getPageWidthPoint(document,index),height=core.getPageHeightPoint(document,index);
                         if(width<=0||height<=0)throw new IOException("Invalid PDF page dimensions");
-                        double scale=Math.min(1400.0/width,2000.0/height);int w=Math.max(1,(int)(width*scale)),h=Math.max(1,(int)(height*scale));
+                        double scale=Math.min(800.0/width,1100.0/height);int w=Math.max(1,(int)(width*scale)),h=Math.max(1,(int)(height*scale));
                         rendered=Bitmap.createBitmap(w,h,Bitmap.Config.RGB_565);rendered.eraseColor(Color.WHITE);core.renderPageBitmap(document,rendered,index,0,0,w,h,true);
                     }finally{if(document!=null)core.closeDocument(document);else if(descriptor!=null)descriptor.close();}
                 }else cells=SpreadsheetReader.read(file,selectedSheet,selectedPage*SpreadsheetReader.ROWS,selectedColumn);
@@ -85,10 +82,10 @@ final class DocumentPreview extends LinearLayout {
                     sheetNames=result.sheets.toArray(new String[result.sheets.size()]);sheetButton.setText(sheetNames.length>sheet?sheetNames[sheet]:"Sheet");sheetButton.setEnabled(true);
                     status.setText("Rows "+(page*SpreadsheetReader.ROWS+1)+"–"+(page*SpreadsheetReader.ROWS+result.rows.size()));
                     next.setEnabled(result.moreRows);left.setEnabled(column>0);right.setEnabled(result.moreColumns);
-                    table.loadDataWithBaseURL(null,SpreadsheetReader.html(result),"text/html","UTF-8",null);
+                    table.show(result);
                 }
             }});
         }});
     }
-    void close(){closed=true;worker.shutdown();if(table!=null){table.stopLoading();table.destroy();}if(image!=null)image.setImageDrawable(null);}
+    void close(){closed=true;worker.shutdownNow();if(table!=null)table.close();if(image!=null)image.setImageDrawable(null);}
 }

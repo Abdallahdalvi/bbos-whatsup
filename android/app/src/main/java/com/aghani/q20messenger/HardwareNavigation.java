@@ -15,6 +15,14 @@ final class HardwareNavigation {
         if(!(view instanceof ViewGroup) && view.isClickable() && !(view instanceof android.widget.EditText)){
             view.setFocusable(true);
             view.setFocusableInTouchMode(true);
+            // Focus before ACTION_UP, otherwise Android consumes the first tap
+            // solely to focus a touch-mode control instead of clicking it.
+            if(view instanceof android.widget.TextView || view instanceof android.widget.ImageButton){
+                view.setOnTouchListener(new View.OnTouchListener(){public boolean onTouch(View target,MotionEvent event){
+                    if(event.getActionMasked()==MotionEvent.ACTION_DOWN)target.requestFocus();
+                    return false;
+                }});
+            }
             if(!(view.getBackground() instanceof StateListDrawable)){
                 Drawable original=view.getBackground();
                 int left=view.getPaddingLeft(),top=view.getPaddingTop(),right=view.getPaddingRight(),bottom=view.getPaddingBottom();

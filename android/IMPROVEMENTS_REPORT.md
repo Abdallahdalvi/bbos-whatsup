@@ -1,3 +1,7 @@
+# Q20 Messenger 0.16.0-beta
+
+Fix first-tap focus consumption, remove home-list JSON serialization on the UI thread, release retired audio players asynchronously, replace spreadsheet WebView with a native visible-cell grid, reduce PDF page buffers, and decode images away from the UI thread. See TEST_REPORT.md for test results and device limits.
+
 Memory follow-up in 0.15: bounded thumbnail queue/targets, sampled decoding, cache release on chat destruction and system memory callbacks, 3 MiB recent-page cache, and a 400-message history window backed by SQLite.
 
 # Q20 Messenger 0.15.0-beta
@@ -123,6 +127,7 @@ The following sections describe earlier releases.
 ## Validation
 
 Android compilation and signing, server syntax, HTTP contracts, and a mocked duplex PCM call-bridge test passed. The bridge test verifies both byte directions and hang-up lifecycle using a fake WhatsApp call. Real ringing/answer/audio quality still requires two live WhatsApp accounts and the target Q20; this environment has neither, so the call feature is not claimed as live-account verified. See `TEST_REPORT.md`.
+
 
 
 

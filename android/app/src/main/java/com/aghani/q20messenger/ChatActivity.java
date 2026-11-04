@@ -117,7 +117,7 @@ public class ChatActivity extends BaseActivity {
     @Override
     protected void onPause() {
         if(peerJid.equals(AppVisibility.visibleChat))AppVisibility.visibleChat="";
-        if (audioPlayback != null) audioPlayback.pause();
+        if (audioPlayback != null) { if(isFinishing())audioPlayback.close();else audioPlayback.pause(); }
         if (recording) finishVoiceRecording();
         handler.removeCallbacks(poller);
         super.onPause();

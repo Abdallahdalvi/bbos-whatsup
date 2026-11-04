@@ -13,8 +13,8 @@ android {
         minSdk 18
         targetSdk 18
         ndk { abiFilters 'armeabi-v7a', 'x86' }
-        versionCode 15
-        versionName '0.15.0-beta'
+        versionCode 16
+        versionName '0.16.0-beta'
         // Optional per-user build-time value. It is deliberately not stored in
         // the source tree or ZIP; a value supplied to the build is extractable
         // from the APK and should only be used for a private, single-user build.
