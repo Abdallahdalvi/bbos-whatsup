@@ -56,7 +56,7 @@ public class MainActivity extends BaseActivity {
         public void run() {
             if (!isFinishing()) {
                 synchronize(false);
-                handler.postDelayed(this, 3000);
+                handler.postDelayed(this, 5000);
             }
         }
     };
@@ -74,7 +74,7 @@ public class MainActivity extends BaseActivity {
         } else {
             loadLocalChats();
             if(AppPrefs.backgroundEnabled(this))startService(new Intent(this, IncomingCallService.class));
-            synchronize(true);
+            synchronize(cachedRows.isEmpty());
             handler.postDelayed(poller, 3000);
 
         }
@@ -83,6 +83,13 @@ public class MainActivity extends BaseActivity {
     @Override protected void onPause() {
         handler.removeCallbacks(poller);
         super.onPause();
+    }
+    @Override public void onBackPressed(){
+        if(AppPrefs.backgroundEnabled(this)){
+            startService(new Intent(this,IncomingCallService.class));
+            if(moveTaskToBack(true))return;
+        }
+        super.onBackPressed();
     }
 
     private void buildScreen() {
@@ -211,6 +218,7 @@ public class MainActivity extends BaseActivity {
     }
 
     private void synchronize(final boolean showProgress) {
+        if(!showProgress&&android.os.SystemClock.elapsedRealtime()-SyncCoordinator.lastFinishedAt()<3000)return;
         if (syncing || AppPrefs.getApiToken(this).length() == 0) return;
         syncing = true;
         if (showProgress) status.setText("Syncing messages…");
@@ -327,7 +335,7 @@ public class MainActivity extends BaseActivity {
         if(position<0||position>=rows.size())return;
         tabNavigationFocused=false;navigationPosition=position;navigationIdentity=rowIdentity(rows.get(position));
         list.requestFocus();refreshSelection();
-        if(scroll&&(position<list.getFirstVisiblePosition()||position>list.getLastVisiblePosition()))list.smoothScrollToPosition(position);
+        if(scroll&&(position<list.getFirstVisiblePosition()||position>list.getLastVisiblePosition()))list.setSelection(position);
         ConversationCache.prefetch(this,rows.get(position).optString("sender",rows.get(position).optString("id")));
     }
     @Override public boolean dispatchKeyEvent(KeyEvent event) {
@@ -413,6 +421,8 @@ public class MainActivity extends BaseActivity {
         return value != null && value.matches("\\+?[0-9][0-9 .()-]{5,}");
     }
 }
+
+
 
 
 

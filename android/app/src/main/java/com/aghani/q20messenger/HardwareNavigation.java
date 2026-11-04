@@ -11,7 +11,7 @@ import android.graphics.drawable.StateListDrawable;
 final class HardwareNavigation {
     static void decorate(View view) {
         // AdapterView focus is a selection, never a full-container background.
-        if(view instanceof android.widget.AdapterView)return;
+        if(view instanceof android.widget.AdapterView){view.setVerticalFadingEdgeEnabled(false);if(view instanceof android.widget.AbsListView){((android.widget.AbsListView)view).setScrollingCacheEnabled(false);((android.widget.AbsListView)view).setAnimationCacheEnabled(false);}return;}
         if(!(view instanceof ViewGroup) && view.isClickable() && !(view instanceof android.widget.EditText)){
             view.setFocusable(true);
             view.setFocusableInTouchMode(true);
@@ -45,8 +45,8 @@ final class HardwareNavigation {
         float delta=event.getAxisValue(MotionEvent.AXIS_VSCROLL);if(delta==0)return false;
         View target=activity.getCurrentFocus();
         while(target!=null){
-            if(target instanceof ListView){((ListView)target).smoothScrollBy((int)(-delta*Ui.dp(activity,36)),100);return true;}
-            if(target instanceof ScrollView){((ScrollView)target).smoothScrollBy(0,(int)(-delta*Ui.dp(activity,36)));return true;}
+            if(target instanceof ListView){((ListView)target).smoothScrollBy((int)(-delta*Ui.dp(activity,36)),0);return true;}
+            if(target instanceof ScrollView){((ScrollView)target).scrollBy(0,(int)(-delta*Ui.dp(activity,36)));return true;}
             target=target.getParent() instanceof View?(View)target.getParent():null;
         }
         return false;
@@ -73,3 +73,5 @@ final class HardwareNavigation {
         activity.dispatchKeyEvent(new KeyEvent(time,time,KeyEvent.ACTION_UP,key,0,0,0,0,0,android.view.InputDevice.SOURCE_TRACKBALL));
     }
 }
+
+

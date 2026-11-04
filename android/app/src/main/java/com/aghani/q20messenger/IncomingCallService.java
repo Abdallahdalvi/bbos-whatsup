@@ -26,7 +26,10 @@ public class IncomingCallService extends Service {
     private android.net.wifi.WifiManager.WifiLock wifiLock;
     private android.media.Ringtone ringtone;
     private final android.os.Handler main=new android.os.Handler(android.os.Looper.getMainLooper());
-    private void watchdog(boolean enabled){android.app.AlarmManager alarm=(android.app.AlarmManager)getSystemService(ALARM_SERVICE);PendingIntent restart=PendingIntent.getService(this,7,new Intent(this,IncomingCallService.class),PendingIntent.FLAG_UPDATE_CURRENT);if(enabled)alarm.setInexactRepeating(android.app.AlarmManager.ELAPSED_REALTIME_WAKEUP,android.os.SystemClock.elapsedRealtime()+60000,60000,restart);else alarm.cancel(restart);}
+    private static PendingIntent restartIntent(android.content.Context context){return PendingIntent.getBroadcast(context,8,new Intent(context,StartupReceiver.class).setAction(StartupReceiver.RESTART),PendingIntent.FLAG_UPDATE_CURRENT);}
+    private void watchdog(boolean enabled){android.app.AlarmManager alarm=(android.app.AlarmManager)getSystemService(ALARM_SERVICE);if(enabled)alarm.setInexactRepeating(android.app.AlarmManager.ELAPSED_REALTIME_WAKEUP,android.os.SystemClock.elapsedRealtime()+60000,60000,restartIntent(this));else alarm.cancel(restartIntent(this));}
+    private long recordedAt;
+    private void recordCheck(String error){long now=System.currentTimeMillis();if(now-recordedAt<15000)return;recordedAt=now;getSharedPreferences("listener_state",0).edit().putLong("checked_at",now).putString("error",error==null?"":error).apply();}
     private void silence(){if(ringtone!=null){ringtone.stop();ringtone=null;}((android.os.Vibrator)getSystemService(VIBRATOR_SERVICE)).cancel();}
     private void ring(){if(ringingId.equals(silencedId))return;try{int mode=((android.media.AudioManager)getSystemService(AUDIO_SERVICE)).getRingerMode();if(mode==android.media.AudioManager.RINGER_MODE_NORMAL){if(ringtone==null){ringtone=android.media.RingtoneManager.getRingtone(this,android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_RINGTONE));if(ringtone!=null)ringtone.setStreamType(android.media.AudioManager.STREAM_RING);}if(ringtone!=null&&!ringtone.isPlaying())ringtone.play();}else if(ringtone!=null){ringtone.stop();ringtone=null;}}catch(RuntimeException ignored){}}
 
@@ -50,14 +53,14 @@ public class IncomingCallService extends Service {
         syncWorker.scheduleWithFixedDelay(new Runnable(){public void run(){
             if(activeCall||!AppPrefs.backgroundEnabled(IncomingCallService.this)||AppPrefs.getPhoneNumber(IncomingCallService.this).length()==0||AppPrefs.getServerUrl(IncomingCallService.this).length()==0||android.os.SystemClock.elapsedRealtime()-SyncCoordinator.lastFinishedAt()<2500||!syncingMessages.compareAndSet(false,true))return;
             AppExecutors.SYNC.execute(new Runnable(){public void run(){try{SyncCoordinator.sync(IncomingCallService.this,new ApiClient(IncomingCallService.this),null);}finally{syncingMessages.set(false);}}});
-        }},5,5,TimeUnit.SECONDS);
+        }},5,10,TimeUnit.SECONDS);
     }
     private void checkCall() {
         if (AppPrefs.getApiToken(this).length() == 0) return;
         try {
             JSONObject call = new ApiClient(this).getVoiceCallStatus();
-            handleCall(call);
-        } catch (Exception ignored) { /* Keep the listener alive through transient network loss. */ }
+            recordCheck(null);handleCall(call);
+        } catch (Exception error) {recordCheck(error.getMessage()==null?error.getClass().getSimpleName():error.getMessage());}
     }
     void handleCall(JSONObject call) {
         if(destroyed)return;
@@ -110,10 +113,11 @@ public class IncomingCallService extends Service {
         watchdog(true);
         return START_STICKY;
     }
-    @Override public void onTaskRemoved(Intent root){if(AppPrefs.backgroundEnabled(this)){android.app.AlarmManager alarm=(android.app.AlarmManager)getSystemService(ALARM_SERVICE);alarm.set(android.app.AlarmManager.ELAPSED_REALTIME_WAKEUP,android.os.SystemClock.elapsedRealtime()+3000,PendingIntent.getService(this,7,new Intent(this,IncomingCallService.class),PendingIntent.FLAG_UPDATE_CURRENT));}super.onTaskRemoved(root);}
+    @Override public void onTaskRemoved(Intent root){if(AppPrefs.backgroundEnabled(this)){android.app.AlarmManager alarm=(android.app.AlarmManager)getSystemService(ALARM_SERVICE);alarm.set(android.app.AlarmManager.ELAPSED_REALTIME_WAKEUP,android.os.SystemClock.elapsedRealtime()+3000,restartIntent(this));}super.onTaskRemoved(root);}
     @Override public IBinder onBind(Intent intent) { return null; }
     @Override public void onDestroy() {
         destroyed=true;
+        if(!AppPrefs.backgroundEnabled(this))watchdog(false);
         if(!AppPrefs.backgroundEnabled(this))((android.app.AlarmManager)getSystemService(ALARM_SERVICE)).cancel(PendingIntent.getService(this,7,new Intent(this,IncomingCallService.class),PendingIntent.FLAG_UPDATE_CURRENT));
         main.removeCallbacksAndMessages(null);silence();
         if(wifiLock!=null&&wifiLock.isHeld())wifiLock.release();
@@ -124,5 +128,7 @@ public class IncomingCallService extends Service {
         super.onDestroy();
     }
 }
+
+
 
 

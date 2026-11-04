@@ -1,3 +1,7 @@
+# Q20 Messenger 0.17.0-beta
+
+Reduce animations and idle sync work; distinguish protocol records from user messages; preserve available business-template content; minimize Home on Back for background listening; add restart broadcast and last-check/error status in Settings. Increase WebSocket connection allowance during network wake-up. The server Runtime/call-function timeout remains under investigation. See TEST_REPORT.md.
+
 # Q20 Messenger 0.16.0-beta
 
 Fix first-tap focus consumption, remove home-list JSON serialization on the UI thread, release retired audio players asynchronously, replace spreadsheet WebView with a native visible-cell grid, reduce PDF page buffers, and decode images away from the UI thread. See TEST_REPORT.md for test results and device limits.
@@ -127,6 +131,7 @@ The following sections describe earlier releases.
 ## Validation
 
 Android compilation and signing, server syntax, HTTP contracts, and a mocked duplex PCM call-bridge test passed. The bridge test verifies both byte directions and hang-up lifecycle using a fake WhatsApp call. Real ringing/answer/audio quality still requires two live WhatsApp accounts and the target Q20; this environment has neither, so the call feature is not claimed as live-account verified. See `TEST_REPORT.md`.
+
 
 
 

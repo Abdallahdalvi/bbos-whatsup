@@ -63,6 +63,7 @@ public final class LocalStore extends SQLiteOpenHelper {
     }
 
     public int upsertMessages(JSONArray batch) {
+        if(batch==null||batch.length()==0)return 0;
         SQLiteDatabase db = getWritableDatabase();
         int imported = 0;
         java.util.HashSet<String> changed=new java.util.HashSet<String>();
@@ -231,7 +232,7 @@ public final class LocalStore extends SQLiteOpenHelper {
         catch (Exception ignored) { }
         finally { read.close(); }
         Cursor count = getReadableDatabase().rawQuery(
-                "SELECT COUNT(*) FROM messages WHERE chat_jid=? AND server_id>? AND from_me=0 AND timestamp>=?",
+                "SELECT COUNT(*) FROM messages WHERE chat_jid=? AND server_id>? AND from_me=0 AND message_type NOT IN ("+MessageContent.NO_UNREAD_SQL+") AND timestamp>=?",
                 new String[] { chatJid, String.valueOf(lastRead),String.valueOf(getState("read_time:"+chatJid)) });
         try { return count.moveToFirst() ? count.getInt(0) : 0; }
         finally { count.close(); }
@@ -255,14 +256,14 @@ public final class LocalStore extends SQLiteOpenHelper {
 
     public JSONArray getChats() {
         JSONArray rows = new JSONArray();
-        Cursor c = getReadableDatabase().rawQuery("SELECT c.chat_jid,c.display_name,c.is_group,substr(c.last_message,1,256),c.last_timestamp,(SELECT COUNT(*) FROM messages m WHERE m.chat_jid=c.chat_jid AND m.from_me=0 AND m.server_id>COALESCE(CAST(r.value AS INTEGER),0) AND m.timestamp>=COALESCE(CAST(rt.value AS INTEGER),0)),c.phone_jid FROM chats c LEFT JOIN sync_state r ON r.key='read:'||c.chat_jid LEFT JOIN sync_state rt ON rt.key='read_time:'||c.chat_jid ORDER BY c.last_timestamp DESC,c.rowid DESC", null);
+        Cursor c = getReadableDatabase().rawQuery("SELECT c.chat_jid,c.display_name,c.is_group,substr(c.last_message,1,256),c.last_timestamp,(SELECT COUNT(*) FROM messages m WHERE m.chat_jid=c.chat_jid AND m.from_me=0 AND m.message_type NOT IN ("+MessageContent.NO_UNREAD_SQL+") AND m.server_id>COALESCE(CAST(r.value AS INTEGER),0) AND m.timestamp>=COALESCE(CAST(rt.value AS INTEGER),0)),c.phone_jid FROM chats c LEFT JOIN sync_state r ON r.key='read:'||c.chat_jid LEFT JOIN sync_state rt ON rt.key='read_time:'||c.chat_jid ORDER BY c.last_timestamp DESC,c.rowid DESC", null);
         try {
             while (c.moveToNext()) {
                 JSONObject row = new JSONObject();
                 row.put("sender", c.getString(0));
                 row.put("senderName", c.getString(1));
                 row.put("is_group", c.getInt(2) != 0);
-                row.put("message", c.getString(3));
+                row.put("message", MessageContent.preview(c.getString(3)));
                 row.put("createdAtMs", c.getLong(4));
                 row.put("unread_count", c.getInt(5));
                 row.put("phone_jid", c.getString(6));
@@ -280,7 +281,7 @@ public final class LocalStore extends SQLiteOpenHelper {
         chatJid=resolveChatJid(chatJid);
         ArrayList<JSONObject> result = new ArrayList<JSONObject>();
         Cursor c = getReadableDatabase().rawQuery(
-                "SELECT server_id,wa_message_id,chat_jid,sender_jid,receiver_jid,participant_jid,sender_name,body,message_type,timestamp,status,from_me,media_filename,media_original_filename,mime_type,media_size,media_download_status,reply_to_id,link_url,rich_json FROM messages WHERE chat_jid=? AND (timestamp<? OR (timestamp=? AND server_id<?)) ORDER BY timestamp DESC,server_id DESC LIMIT ?",
+                "SELECT server_id,wa_message_id,chat_jid,sender_jid,receiver_jid,participant_jid,sender_name,body,message_type,timestamp,status,from_me,media_filename,media_original_filename,mime_type,media_size,media_download_status,reply_to_id,link_url,rich_json FROM messages WHERE chat_jid=? AND message_type NOT IN ("+MessageContent.SILENT_SQL+") AND (timestamp<? OR (timestamp=? AND server_id<?)) ORDER BY timestamp DESC,server_id DESC LIMIT ?",
                 new String[] { chatJid, String.valueOf(beforeTimestamp), String.valueOf(beforeTimestamp), String.valueOf(beforeId), String.valueOf(limit) });
         try {
             while (c.moveToNext()) {
@@ -374,3 +375,5 @@ public final class LocalStore extends SQLiteOpenHelper {
         try { return c.moveToFirst() ? c.getInt(0) : 0; } finally { c.close(); }
     }
 }
+
+

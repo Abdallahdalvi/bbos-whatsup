@@ -697,7 +697,7 @@ public class ChatActivity extends BaseActivity {
         public View getView(int position, View convertView, ViewGroup parent) {
             final JSONObject message = messages.get(position);
             String type = message.optString("chatType", "chat");
-            String body = message.optString("message", "");
+            String body = MessageContent.body(type,message.optString("message", ""),message.optJSONObject("rich"));
             String sender = message.optString("sender", "");
             boolean outgoing = message.optBoolean("from_me", sender.equalsIgnoreCase(ownJid));
 
@@ -705,6 +705,11 @@ public class ChatActivity extends BaseActivity {
             row.setGravity(outgoing ? Gravity.RIGHT : Gravity.LEFT);
             row.setPadding(Ui.dp(ChatActivity.this, 7), Ui.dp(ChatActivity.this, 2),
                     Ui.dp(ChatActivity.this, 7), Ui.dp(ChatActivity.this, 2));
+            if("gp2".equals(type)){
+                row.setGravity(Gravity.CENTER);
+                TextView notice=Ui.text(ChatActivity.this,body,11,getResources().getColor(R.color.muted));
+                notice.setGravity(Gravity.CENTER);row.addView(notice);return row;
+            }
 
             long day=message.optLong("timestamp_ms",0);java.text.SimpleDateFormat dates=new java.text.SimpleDateFormat("dd MMM yyyy",java.util.Locale.getDefault());
             if(day>0 && (position==0 || !dates.format(new java.util.Date(day)).equals(dates.format(new java.util.Date(messages.get(position-1).optLong("timestamp_ms",0)))))) {
@@ -995,5 +1000,6 @@ public class ChatActivity extends BaseActivity {
         String error;
     }
 }
+
 
 

@@ -36,7 +36,10 @@ public class BackgroundAndNavigationTest {
   android.graphics.Bitmap original=android.graphics.Bitmap.createBitmap(1600,1200,android.graphics.Bitmap.Config.RGB_565);java.io.File file=new java.io.File(context.getCacheDir(),"large-thumbnail.jpg");java.io.FileOutputStream out=new java.io.FileOutputStream(file);original.compress(android.graphics.Bitmap.CompressFormat.JPEG,85,out);out.close();original.recycle();
   ActivityController<ChatActivity> controller=Robolectric.buildActivity(ChatActivity.class,new Intent(context,ChatActivity.class).putExtra("peer_jid","a@c.us")).create();
   try{android.graphics.Bitmap decoded=ReflectionHelpers.callInstanceMethod(controller.get(),"decodeThumbnail",ReflectionHelpers.ClassParameter.from(java.io.File.class,file));assertNotNull(decoded);assertTrue(decoded.getWidth()<=440);assertTrue(decoded.getHeight()<=440);assertTrue(decoded.getByteCount()<=440*440*2);decoded.recycle();}finally{controller.destroy();file.delete();}
- }}
+ } @Test public void watchdogBroadcastRestartsOnlyEnabledListener(){new StartupReceiver().onReceive(context,new Intent(StartupReceiver.RESTART));Intent start=Shadows.shadowOf((android.app.Application)context).getNextStartedService();assertNotNull(start);assertEquals(IncomingCallService.class.getName(),start.getComponent().getClassName());AppPrefs.setBackgroundEnabled(context,false);new StartupReceiver().onReceive(context,new Intent(StartupReceiver.RESTART));assertNull(Shadows.shadowOf((android.app.Application)context).getNextStartedService());} public static class MinimizingHome extends MainActivity {boolean moved;@Override public boolean moveTaskToBack(boolean nonRoot){moved=true;return true;}}
+ @Test public void homeBackMinimizesTaskForBackgroundCalling(){AppPrefs.setBackgroundEnabled(context,true);ActivityController<MinimizingHome> c=Robolectric.buildActivity(MinimizingHome.class).create();try{c.get().onBackPressed();assertTrue(c.get().moved);assertFalse(c.get().isFinishing());}finally{c.destroy();}}}
+
+
 
 
 

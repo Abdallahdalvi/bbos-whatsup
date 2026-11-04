@@ -31,6 +31,13 @@ public class SettingsActivity extends BaseActivity {
         dark.setText("Dark theme"); dark.setChecked(AppPrefs.isDark(this));
         root.addView(dark, new LinearLayout.LayoutParams(-1, Ui.dp(this, 42)));
         android.widget.Switch background=new android.widget.Switch(this);background.setText("Background calls and messages");background.setChecked(AppPrefs.backgroundEnabled(this));root.addView(background,new LinearLayout.LayoutParams(-1,Ui.dp(this,42)));
+        android.content.SharedPreferences listener=getSharedPreferences("listener_state",0);
+        long checked=listener.getLong("checked_at",0);
+        String listenerStatus=checked==0?"Listener has not checked the server yet":"Listener last checked "+Math.max(0,(System.currentTimeMillis()-checked)/1000)+" seconds ago";
+        String listenerError=listener.getString("error","");
+        if(listenerError.length()>0)listenerStatus+=" · "+listenerError;
+        TextView listenerInfo=Ui.text(this,listenerStatus,11,getResources().getColor(R.color.muted));
+        root.addView(listenerInfo,new LinearLayout.LayoutParams(-1,-2));
         background.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener(){public void onCheckedChanged(android.widget.CompoundButton button,boolean enabled){AppPrefs.setBackgroundEnabled(SettingsActivity.this,enabled);android.content.Intent service=new android.content.Intent(SettingsActivity.this,IncomingCallService.class);if(enabled)startService(service);else stopService(service);}});
         dark.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(android.widget.CompoundButton button, boolean checked) { AppPrefs.setDark(SettingsActivity.this,checked); recreate(); }

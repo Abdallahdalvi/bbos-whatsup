@@ -17,11 +17,12 @@ final class MessageNotifications {
   NotificationManager manager=(NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
   HashSet<String> alerted=new HashSet<String>();
   while(cursor<snapshot){
-   Cursor c=store.getReadableDatabase().rawQuery("SELECT server_id,chat_jid,body,message_type FROM messages WHERE server_id>? AND server_id<=? AND from_me=0 AND timestamp>=? ORDER BY server_id LIMIT 200",new String[]{String.valueOf(cursor),String.valueOf(snapshot),String.valueOf(since)});
+   Cursor c=store.getReadableDatabase().rawQuery("SELECT server_id,chat_jid,body,message_type,rich_json FROM messages WHERE server_id>? AND server_id<=? AND from_me=0 AND message_type NOT IN ("+MessageContent.NO_UNREAD_SQL+") AND timestamp>=? ORDER BY server_id LIMIT 200",new String[]{String.valueOf(cursor),String.valueOf(snapshot),String.valueOf(since)});
    LinkedHashMap<String,String> latest=new LinkedHashMap<String,String>();long next=cursor;
    try{while(c.moveToNext()){next=c.getLong(0);String jid=c.getString(1);if(jid.equals(AppVisibility.visibleChat))continue;
       if(next<=store.getState("read:"+jid))continue;
-      String text=c.getString(2);if(text==null||text.length()==0)text=c.getString(3);latest.put(jid,text.length()>160?text.substring(0,160)+"…":text);
+      JSONObject rich=null;try{rich=new JSONObject(c.getString(4));}catch(Exception ignored){}
+      String text=MessageContent.body(c.getString(3),c.getString(2),rich);if(text.length()==0)text=c.getString(3);latest.put(jid,text.length()>160?text.substring(0,160)+"…":text);
    }}finally{c.close();}
    for(Map.Entry<String,String> item:latest.entrySet()){
     String jid=item.getKey(),name=store.getChatName(jid);Intent open=new Intent(context,ChatActivity.class).putExtra("peer_jid",jid).putExtra("peer_name",name).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -35,3 +36,4 @@ final class MessageNotifications {
  }
  private MessageNotifications(){}
 }
+

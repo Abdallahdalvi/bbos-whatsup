@@ -20,7 +20,7 @@ final class SpreadsheetPreview extends ScrollView {
     void show(SpreadsheetReader.Page page){grid.page=page;grid.requestLayout();grid.invalidate();scrollTo(0,0);horizontal.scrollTo(0,0);}
     void close(){grid.page=null;grid.invalidate();}
     @Override public boolean onKeyDown(int key,KeyEvent event){
-        if(key==KeyEvent.KEYCODE_DPAD_LEFT||key==KeyEvent.KEYCODE_DPAD_RIGHT){horizontal.smoothScrollBy(Ui.dp(getContext(),key==KeyEvent.KEYCODE_DPAD_RIGHT?100:-100),0);return true;}
+        if(key==KeyEvent.KEYCODE_DPAD_LEFT||key==KeyEvent.KEYCODE_DPAD_RIGHT){horizontal.scrollBy(Ui.dp(getContext(),key==KeyEvent.KEYCODE_DPAD_RIGHT?100:-100),0);return true;}
         return super.onKeyDown(key,event);
     }
     private static final class Grid extends View {
@@ -43,3 +43,4 @@ final class SpreadsheetPreview extends ScrollView {
         }
     }
 }
+

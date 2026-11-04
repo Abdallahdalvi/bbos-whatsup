@@ -31,4 +31,13 @@ public class ConversationStateTest {
   android.database.sqlite.SQLiteDatabase old=context.openOrCreateDatabase("q20-local.db",0,null);old.execSQL("CREATE TABLE messages(server_id INTEGER,chat_jid TEXT,from_me INTEGER,timestamp INTEGER)");old.execSQL("INSERT INTO messages VALUES(1,'a@c.us',0,100)");old.setVersion(4);old.close();
   LocalStore migrated=LocalStore.get(context);assertEquals(1,migrated.countMessages());assertEquals(0,migrated.getCalls().length());assertEquals(5,migrated.getReadableDatabase().getVersion());
  }
-}
+ @Test public void controlRecordsDoNotConsumeMessagePagesOrUnreadBadges()throws Exception {
+  put(message(1,"a@c.us",100,"first"));put(message(2,"a@c.us",200,"second"));
+  put(message(3,"a@c.us",300,"e2e_notification received").put("chat_type","e2e_notification"));put(message(4,"a@c.us",400,"protocol received").put("chat_type","protocol"));
+  java.util.ArrayList<JSONObject> page=store.getMessages("a@c.us",2,Long.MAX_VALUE);assertEquals(2,page.size());assertEquals("first",page.get(0).getString("message"));assertEquals("second",page.get(1).getString("message"));assertEquals(2,store.getUnreadCount("a@c.us"));assertEquals(4,store.countMessages());
+ }
+ @Test public void templatesKeepAvailableTextAndControlsHaveReadableLabels()throws Exception {
+  assertEquals("Order shipped",MessageContent.body("notification_template","notification_template received",new JSONObject("{caption:'Order shipped'}")));
+  assertEquals("Group updated",MessageContent.body("gp2","gp2 received",null));assertEquals("Hello",MessageContent.body("chat","Hello",null));assertEquals("",MessageContent.preview(""));assertTrue(MessageContent.body("ciphertext","ciphertext received",null).startsWith("Waiting"));
+ }}
+

@@ -21,7 +21,7 @@
         <provider android:name="android.support.v4.content.FileProvider" android:authorities="${applicationId}.media" android:exported="false" android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/shared_media_paths" />
         </provider>
-        <service android:name=".IncomingCallService" android:exported="false" />
+        <service android:name=".IncomingCallService" android:exported="false" android:stopWithTask="false" />
         <receiver android:name=".DeclineCallReceiver" android:exported="false" />
         <receiver android:name=".StartupReceiver" android:exported="true"><intent-filter><action android:name="android.intent.action.BOOT_COMPLETED"/><action android:name="android.intent.action.MY_PACKAGE_REPLACED"/></intent-filter></receiver>
         <activity android:name=".IncomingCallActivity" android:theme="@style/LegacyMediaTheme" android:exported="false" android:launchMode="singleTop" android:excludeFromRecents="true" android:configChanges="keyboardHidden|orientation|screenSize" />

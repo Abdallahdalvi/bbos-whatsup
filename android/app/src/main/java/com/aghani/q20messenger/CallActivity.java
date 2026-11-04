@@ -162,7 +162,7 @@ public class CallActivity extends BaseActivity {
             ApiClient api = new ApiClient(this);
             Request request = new Request.Builder().url(api.getVoiceCallWebSocketUrl(callId))
                     .header("Authorization", "Bearer " + api.getApiToken()).build();
-            webSocketClient = new OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS).pingInterval(15, TimeUnit.SECONDS).build();
+            webSocketClient = new OkHttpClient.Builder().connectTimeout(25, TimeUnit.SECONDS).writeTimeout(15, TimeUnit.SECONDS).readTimeout(0, TimeUnit.MILLISECONDS).pingInterval(15, TimeUnit.SECONDS).build();
             webSocket = webSocketClient.newWebSocket(request, new WebSocketListener() {
                 @Override public void onOpen(WebSocket socket, Response response) {
                     runOnUiThread(new Runnable() { public void run() { stateText.setText("Ringing…"); } });
@@ -357,4 +357,5 @@ public class CallActivity extends BaseActivity {
         super.onDestroy();
     }
 }
+
 
