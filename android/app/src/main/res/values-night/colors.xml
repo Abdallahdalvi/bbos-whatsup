@@ -1,0 +1,9 @@
+<resources>
+<color name="ink">#E9EDEF</color><color name="ink_light">#D1D7DB</color>
+<color name="green">#21C063</color><color name="green_dark">#21C063</color><color name="accent_green">#21C063</color>
+<color name="whatsapp_toolbar">#0B141A</color><color name="whatsapp_status">#202C33</color>
+<color name="chat_wallpaper">#0B141A</color><color name="paper">#10181D</color>
+<color name="white">#FFFFFF</color><color name="muted">#8696A0</color><color name="line">#26343D</color>
+<color name="bubble_in">#202C33</color><color name="bubble_out">#005C4B</color>
+<color name="danger">#F08080</color><color name="selection">#30483E</color>
+</resources>

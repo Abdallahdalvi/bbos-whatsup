@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:fitsSystemWindows="true" android:background="@color/white" android:padding="8dp">
+    <TextView android:layout_width="match_parent" android:layout_height="24dp" android:gravity="center" android:text="WhatsApp voice call" android:textColor="@color/green_dark" android:textSize="13sp" />
+    <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
+            <TextView android:id="@+id/call_peer" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:maxLines="2" android:ellipsize="end" android:textColor="@color/ink" android:textSize="18sp" android:textStyle="bold" />
+            <TextView android:id="@+id/call_state" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:gravity="center" android:text="Connecting…" android:textIsSelectable="true" android:textColor="@color/muted" android:textSize="12sp" />
+            <TextView android:id="@+id/call_timer" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:textColor="@color/green_dark" android:textSize="15sp" />
+        </LinearLayout>
+    </ScrollView>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="34dp" android:orientation="horizontal">
+        <Button android:id="@+id/call_mute" style="@style/CompactButton" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="Mute" />
+        <Button android:id="@+id/call_speaker" style="@style/CompactButton" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="Speaker" />
+    </LinearLayout>
+    <Button android:id="@+id/call_hangup" style="@style/CompactButton" android:layout_width="match_parent" android:layout_height="36dp" android:layout_marginTop="6dp" android:background="@drawable/send_button" android:text="End call" android:textColor="@color/white" />
+</LinearLayout>

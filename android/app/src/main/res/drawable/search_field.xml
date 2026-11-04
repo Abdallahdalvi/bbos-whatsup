@@ -1,0 +1,5 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/whatsapp_status" />
+    <corners android:radius="24dp" />
+    <padding android:left="16dp" android:right="16dp" />
+</shape>

@@ -1,0 +1,39 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <application
+        android:name=".MessengerApplication"
+        android:largeHeap="true"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="Q20 Messenger"
+        android:theme="@style/AppTheme">
+        <provider android:name="android.support.v4.content.FileProvider" android:authorities="${applicationId}.media" android:exported="false" android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/shared_media_paths" />
+        </provider>
+        <service android:name=".IncomingCallService" android:exported="false" />
+        <receiver android:name=".DeclineCallReceiver" android:exported="false" />
+        <receiver android:name=".StartupReceiver" android:exported="true"><intent-filter><action android:name="android.intent.action.BOOT_COMPLETED"/><action android:name="android.intent.action.MY_PACKAGE_REPLACED"/></intent-filter></receiver>
+        <activity android:name=".IncomingCallActivity" android:theme="@style/LegacyMediaTheme" android:exported="false" android:launchMode="singleTop" android:excludeFromRecents="true" android:configChanges="keyboardHidden|orientation|screenSize" />
+
+        <activity android:name=".MainActivity" android:windowSoftInputMode="stateAlwaysHidden|adjustResize" android:label="Q20 Messenger" android:exported="true" android:configChanges="keyboardHidden|orientation|screenSize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".SettingsActivity" android:label="Connection settings" android:configChanges="keyboardHidden|orientation|screenSize" />
+        <activity android:name=".ContactsActivity" android:label="Contacts" android:configChanges="keyboardHidden|orientation|screenSize" />
+        <activity android:name=".ChatActivity" android:windowSoftInputMode="stateAlwaysHidden|adjustResize" android:label="Conversation" android:configChanges="keyboardHidden|orientation|screenSize" />
+        <activity android:name=".CallActivity" android:label="WhatsApp voice call" android:configChanges="keyboardHidden|orientation|screenSize" android:screenOrientation="portrait" />
+        <activity android:name=".MediaViewerActivity" android:theme="@style/LegacyMediaTheme" android:label="Media" android:configChanges="keyboardHidden|orientation|screenSize" />
+    </application>
+</manifest>

@@ -1,0 +1,19 @@
+# Local builds, credentials, and WhatsApp session state
+**/*.apk
+**/*.aab
+**/*.keystore
+**/*.jks
+**/local.properties
+**/q20-private-config.json
+**/.wwebjs_auth/
+**/auth_info_baileys/
+**/node_modules/
+**/.gradle/
+**/build/
+**/output/
+**/media/
+**/*.sqlite
+**/*.sqlite3
+**/*.db
+.env
+.env.*

@@ -1,0 +1,64 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.aghani.q20messenger'
+    // AGP 8.2.x requires a recent compile platform. The app still targets the
+    // API 18 runtime used by BlackBerry 10 and only uses APIs available there.
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.aghani.q20messenger'
+        minSdk 18
+        targetSdk 18
+        ndk { abiFilters 'armeabi-v7a', 'x86' }
+        versionCode 14
+        versionName '0.14.0-beta'
+        // Optional per-user build-time value. It is deliberately not stored in
+        // the source tree or ZIP; a value supplied to the build is extractable
+        // from the APK and should only be used for a private, single-user build.
+        def q20ApiToken = System.getenv('Q20_API_TOKEN') ?: ''
+        buildConfigField 'String', 'Q20_API_TOKEN', '"' + q20ApiToken + '"'
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+        }
+        release {
+            minifyEnabled false
+        }
+    }
+
+    lint {
+        // This is a sideloaded client for BlackBerry's API 18 runtime, not a
+        // Google Play app. Raising targetSdk would change its intended runtime.
+        disable += 'ExpiredTargetSdkVersion'
+        // Support v7 28 is intentional for the API 18 BlackBerry runtime.
+        disable += 'GradleCompatible'
+    }
+    testOptions {
+        unitTests.includeAndroidResources = true
+    }
+}
+
+dependencies {
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    // OkHttp 3.12 keeps WebSocket support compatible with Android API 18.
+    implementation 'com.squareup.okhttp3:okhttp:3.12.13'
+    implementation 'com.github.barteksc:pdfium-android:1.9.0'
+    implementation 'org.apache.poi:poi:3.17'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'com.squareup.okhttp3:mockwebserver:3.12.13'
+    testImplementation 'org.robolectric:robolectric:4.11.1'
+}

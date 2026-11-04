@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:fitsSystemWindows="true" android:background="@color/chat_wallpaper" android:orientation="vertical">
+    <LinearLayout android:id="@+id/conversation_header" android:layout_width="match_parent" android:layout_height="44dp" android:background="@color/paper" android:gravity="center_vertical" android:paddingRight="3dp">
+        <ImageButton android:id="@+id/chat_back" style="@style/CompactIcon" android:src="@drawable/ic_back" android:contentDescription="Back to chats" />
+        <TextView android:id="@+id/chat_title" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:minWidth="0dp" android:gravity="center_vertical" android:ellipsize="end" android:singleLine="true" android:textColor="@color/ink" android:textSize="15sp" android:textStyle="bold" />
+        <ImageButton android:id="@+id/chat_call" style="@style/CompactIcon" android:src="@drawable/ic_call" android:contentDescription="WhatsApp voice call" />
+        <ImageButton android:id="@+id/chat_refresh" style="@style/CompactIcon" android:src="@drawable/ic_refresh" android:contentDescription="Refresh conversation" />
+    </LinearLayout>
+    <TextView android:id="@+id/chat_status" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingLeft="8dp" android:paddingRight="8dp" android:maxLines="2" android:textColor="@color/muted" android:textSize="10sp" />
+    <ListView android:id="@+id/message_list" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:cacheColorHint="@color/chat_wallpaper" android:divider="@android:color/transparent" android:dividerHeight="0dp" android:transcriptMode="normal" android:clipToPadding="false" android:paddingTop="4dp" android:paddingBottom="4dp" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@color/paper" android:gravity="right|center_vertical">
+        <TextView android:id="@+id/chat_record_time" android:layout_width="0dp" android:layout_height="28dp" android:layout_weight="1" android:gravity="center_vertical" android:paddingLeft="12dp" android:text="0:00" android:textColor="@color/green_dark" android:textSize="12sp" android:visibility="gone" />
+        <Button android:id="@+id/chat_record_cancel" style="@style/CompactButton" android:layout_width="58dp" android:layout_height="28dp" android:background="@drawable/compact_selector" android:text="Cancel" android:textColor="@color/danger" android:visibility="gone" />
+    </LinearLayout>
+    <LinearLayout android:id="@+id/chat_compose_row" android:layout_width="match_parent" android:layout_height="42dp" android:background="@color/paper" android:gravity="center_vertical" android:padding="2dp">
+        <ImageButton android:id="@+id/chat_attach" style="@style/CompactIcon" android:layout_width="28dp" android:padding="5dp" android:src="@drawable/ic_attach" android:contentDescription="Attach media or document" />
+        <ImageButton android:id="@+id/chat_emoji" style="@style/CompactIcon" android:layout_width="28dp" android:padding="5dp" android:src="@drawable/ic_emoji" android:contentDescription="Choose emoji" />
+        <EditText android:id="@+id/chat_composer" android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1" android:minWidth="0dp" android:background="@drawable/composer_field" android:textColor="@color/ink" android:textColorHint="@color/muted" android:hint="Message" android:inputType="textMultiLine|textCapSentences" android:maxLines="2" android:paddingLeft="10dp" android:paddingRight="6dp" android:paddingTop="4dp" android:paddingBottom="4dp" android:textSize="13sp" />
+        <ImageButton android:id="@+id/chat_mic" android:layout_width="36dp" android:layout_height="36dp" android:background="@drawable/send_button" android:padding="8dp" android:src="@drawable/ic_mic" android:contentDescription="Record voice note" />
+        <ImageButton android:id="@+id/chat_send" android:layout_width="36dp" android:layout_height="36dp" android:background="@drawable/send_button" android:padding="8dp" android:src="@drawable/ic_send" android:contentDescription="Send message" android:visibility="gone" />
+    </LinearLayout>
+</LinearLayout>

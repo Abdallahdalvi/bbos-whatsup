@@ -1,0 +1,13 @@
+Q20 Messenger — build status (2026-11-03)
+
+- Android package: com.aghani.q20messenger, version 0.4.0-beta (versionCode 4, debug signed)
+- Minimum SDK 18; target SDK 18; compile SDK 34
+- Java/XML implementation with Gradle 8.2.1 wrapper and Android Gradle Plugin 8.2.2
+- APK: output/Q20Messenger.apk
+- Version 0.4.0-beta clean CLI build, APK signature verification, and API 18 package metadata checks passed. The APK includes the user-provided API token; keep it private because bearer tokens can be extracted from APKs.
+- Updated server source files passed `node --check`; runtime call-link generation and real WhatsApp name availability still require the linked server session.
+- Earlier v2 endpoint contract and synthetic importer resume/dedup checks are recorded in TEST_REPORT.md. The newest server-name mapping and Android runtime behaviors have not been re-tested against a live account or Q20 device.
+- No device was attached. No Q20/API 18 runtime test or authenticated live server integration test was performed.
+- Server v2 patch is packaged separately and has not been applied to the running server. No live Docker container, database or WhatsApp authentication was modified. Existing database counts and real send/receive behavior remain unverified.
+
+See TEST_REPORT.md, HISTORY_IMPORT_REPORT.md, API_DOCUMENTATION.md, and INSTALLATION.md for details and limitations.

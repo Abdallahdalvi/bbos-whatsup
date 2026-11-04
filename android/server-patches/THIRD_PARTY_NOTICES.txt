@@ -1,0 +1,11 @@
+Q20 Messenger server third-party notices
+
+whatsapp-web.js and call-enabled fork
+https://github.com/pedroslopez/whatsapp-web.js
+https://github.com/alpersamur3/whatsapp-web.js/tree/8d46caf822ac35e805f4749e1ebeb8e5c56b4c6d
+Copyright the whatsapp-web.js authors and contributors.
+Apache License 2.0; full text included in Apache-2.0.txt.
+
+q20CallSupport.js adapts the pinned fork's browser call-audio helpers.
+Q20 changes use shorter capture blocks and bounded live playback scheduling.
+Other installed dependencies retain their own notices and licenses in their packages.

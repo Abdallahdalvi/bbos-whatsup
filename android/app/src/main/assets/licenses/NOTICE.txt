@@ -1,0 +1,34 @@
+Q20 Messenger open-source interface components
+
+Android Support Library AppCompat 28.0.0
+https://android.googlesource.com/platform/frameworks/support/
+Copyright The Android Open Source Project. Apache License 2.0.
+
+Google Material Design Icons (PNG assets retrieved 2026-11-03)
+https://github.com/google/material-design-icons
+Copyright Google. Apache License 2.0. See material-icons-LICENSE.txt.
+
+PhotoView 2.0.0 source, used for image pan and zoom
+https://github.com/Baseflow/PhotoView/tree/2.0.0
+Copyright Chris Banes and contributors. Apache License 2.0.
+Original source/license headers retained. See PhotoView-LICENSE.txt.
+
+Twemoji 17.0.3 graphics
+https://github.com/jdecked/twemoji
+Copyright Twitter and contributors. CC BY 4.0.
+Licenses are also included in the emoji asset directory.
+
+PdfiumAndroid 1.9.0 (native PDF rendering, API 14+)
+https://github.com/barteksc/PdfiumAndroid
+Original work Copyright 2015 Bekket McClane; modified work Copyright 2016 Bartosz Schiller.
+Apache 2.0 wrapper, PDFium BSD license. See PdfiumAndroid-LICENSE.txt and the full Apache text in PhotoView-LICENSE.txt.
+
+Apache POI 3.17 HSSF, Apache Commons Codec 1.10, Commons Collections 4.1
+https://poi.apache.org/ and https://commons.apache.org/
+Copyright The Apache Software Foundation and contributors. Apache License 2.0.
+The distributed library LICENSE/NOTICE texts are included beside this notice.
+The Q20 spreadsheet viewer shows paged cell values and cached formula results; no macros or formulas execute.
+
+Native PDF engine components: PDFium, libpng, FreeType and libc++.
+Portions of this software are copyright The FreeType Project (www.freetype.org). All rights reserved.
+See FreeType-FTL.txt, libpng-LICENSE.txt, libcxx-NOTICE.txt and PdfiumAndroid-LICENSE.txt.
