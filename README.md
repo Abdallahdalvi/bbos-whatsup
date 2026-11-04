@@ -1,6 +1,6 @@
 # Q20 Messenger
 
-Q20 Messenger is an Android client for the BlackBerry Q20 Android Runtime, paired with the Nokia4Ever WhatsApp bridge. The Android source and matching 0.13 server source are included here. Release at this commit: Android 0.17.0-beta; server 0.13.
+Q20 Messenger is an Android client for the BlackBerry Q20 Android Runtime, paired with the Nokia4Ever WhatsApp bridge. The Android source and proposed 0.18 staging server source are included here. Release at this commit: Android 0.17.0-beta; server 0.18 staging proposal.
 
 ## Build Android
 
@@ -10,7 +10,8 @@ Use JDK 17 and Android SDK Platform 34 / Build Tools 34.0.0. From `android/`, ru
 
 The `server/` directory preserves the legacy API router and adds the Q20 v2 endpoints. Install dependencies with `npm ci`, configure `Q20_API_TOKEN` through the deployment environment/secret manager, and use the server's existing persistent auth/database mounts. Do not put WhatsApp auth state, SQLite databases, media, or credentials in Git.
 
-The Android 0.17 changes are client-only and work with the 0.13 backend. See `android/TEST_REPORT.md`, `android/API_DOCUMENTATION.md`, and `android/INSTALLATION.md` for behavior, API details, and Q20 validation limits.
+Android 0.17 works with the deployed 0.13 backend. The 0.18 server contacts/browser fix is proposed for isolated staging; see server/staging-patch/README.md and server/TEST_REPORT_018.md. See `android/TEST_REPORT.md`, `android/API_DOCUMENTATION.md`, and `android/INSTALLATION.md` for behavior, API details, and Q20 validation limits.
+
 
 
 

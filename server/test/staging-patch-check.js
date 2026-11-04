@@ -1,0 +1,21 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),cp=require('node:child_process'),assert=require('node:assert/strict'),crypto=require('node:crypto');
+const repo=path.resolve(__dirname,'../..'),patch=path.join(repo,'server/staging-patch/apply-staging.js');
+const manifest=require('../staging-patch/manifest.json');
+const root=fs.mkdtempSync(path.join(os.tmpdir(),'q20-018-staging-'));
+for(const name of ['server.js','messageRouter.js','connect.js','WhatsappClient.js','q20CallSupport.js','messageRouterV2.js'])fs.writeFileSync(path.join(root,name),cp.execFileSync('git',['show',manifest.base_commit+':server/'+name],{cwd:repo}));
+fs.mkdirSync(path.join(root,'.wwebjs_auth/session-local'),{recursive:true});fs.writeFileSync(path.join(root,'.wwebjs_auth/session-local/keep'),'fixture-auth');fs.mkdirSync(path.join(root,'data'));fs.writeFileSync(path.join(root,'data/mydata.db'),'fixture-db');
+const preserved=['server.js','messageRouter.js','connect.js','.wwebjs_auth/session-local/keep','data/mydata.db'];
+const before=preserved.map(name=>fs.readFileSync(path.join(root,name),'utf8'));
+console.log(cp.execFileSync(process.execPath,[patch,'--staging',root,'--check'],{encoding:'utf8'}));
+assert.equal(fs.existsSync(path.join(root,'q20ContactCache.js')),false);
+console.log(cp.execFileSync(process.execPath,[patch,'--staging',root],{encoding:'utf8'}));
+assert.deepEqual(preserved.map(name=>fs.readFileSync(path.join(root,name),'utf8')),before);
+assert.ok(fs.existsSync(path.join(root,'q20ContactCache.js')));
+console.log(cp.execFileSync(process.execPath,[patch,'--staging',root],{encoding:'utf8'}));
+fs.appendFileSync(path.join(root,'WhatsappClient.js'),'\n// unrecognized edit\n');
+const original=fs.readFileSync(path.join(root,'q20CallSupport.js'));
+assert.throws(()=>cp.execFileSync(process.execPath,[patch,'--staging',root],{stdio:'pipe'}),/Command failed/);
+assert.deepEqual(fs.readFileSync(path.join(root,'q20CallSupport.js')),original);
+console.log('PASS: staging dry run, known-base application, idempotency, modified-base refusal, legacy/auth/database preservation. Fixture retained at '+root);
+

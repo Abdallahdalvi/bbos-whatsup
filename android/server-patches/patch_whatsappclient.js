@@ -19,6 +19,7 @@ const files = [
   ['q20HistorySupport.js', '.before-q20-v2-patch'],
   ['messageRouterV2.js', '.before-q20-v2-patch'],
   ['q20CallSupport.js', '.before-q20-v2-patch'],
+  ['q20ContactCache.js', '.before-q20-v2-patch'],
   ['q20RichMessages.js', '.before-q20-v2-patch'],
   ['q20MediaVariants.js', '.before-q20-v2-patch'],
   ['q20Config.js', '.before-q20-v2-patch'],

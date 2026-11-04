@@ -1,6 +1,7 @@
 'use strict';
 
 const { PassThrough } = require('stream');
+const { deadline } = require('./q20ContactCache');
 
 // Adapted from the pinned whatsapp-web.js call-audio helpers (Apache-2.0).
 // Live phone audio needs shorter blocks than the upstream recording/TTS defaults.
@@ -408,7 +409,15 @@ function createCallSupport(client, timings = {}) {
         });
     }
 
-    async function diagnostics() {
+    let diagnosticsPending=null,diagnosticsSnapshot=null,diagnosticsAt=0;
+    async function diagnostics(){
+        if(!diagnosticsPending && (!diagnosticsSnapshot || Date.now()-diagnosticsAt>5000)){
+            diagnosticsPending=diagnosticsUnbounded().then(value=>{diagnosticsSnapshot=value;diagnosticsAt=Date.now();return value;}).finally(()=>{diagnosticsPending=null;});
+        }
+        try{return Object.assign({},diagnosticsPending?await deadline(diagnosticsPending,timings.diagnosticsTimeoutMs||4500,'WhatsApp browser diagnostics'):diagnosticsSnapshot,{status:getStatus()});}
+        catch(error){return Object.assign({},diagnosticsSnapshot||{},{status:getStatus(),connected:!!client.info,browser_error:error.message,browser_pending:!!diagnosticsPending});}
+    }
+    async function diagnosticsUnbounded() {
         const result = { status: getStatus(), connected: !!client.info, client_call: typeof client.call === 'function' };
         if (client.pupBrowser && typeof client.pupBrowser.version === 'function') {
             try { result.chromium_version = await client.pupBrowser.version(); } catch (_) { }

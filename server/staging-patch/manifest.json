@@ -1,0 +1,26 @@
+{
+  "files": [
+    {
+      "name": "WhatsappClient.js",
+      "updated_sha256": "68093fd1bbb5044992e1901645837b43b5709d738704a3bc410b44101cd4dfed",
+      "base_sha256": "3554d3fbd5037b536f9f8b64a972f1ab9abd1c81068a4cfff25a11f4c91d7987"
+    },
+    {
+      "name": "q20CallSupport.js",
+      "updated_sha256": "9305d8d7294e37ec751174f4496dc448cb7a31393b865fcf2b7873821fdee5ba",
+      "base_sha256": "6e47fdfb3e383c80fcafc202a1e72f6c2593e40c9d7cae358423f22606c442fd"
+    },
+    {
+      "name": "messageRouterV2.js",
+      "updated_sha256": "b84eee0d59c3ccb23f86eb4ed473ad661455d6f8e02202e8859321b914b2dfa3",
+      "base_sha256": "fb0200d893ccdfd1cce5942f51f0af1eab59d37a4fb465fa5b554c9b54bfba5c"
+    },
+    {
+      "name": "q20ContactCache.js",
+      "updated_sha256": "06542d94abf971c0465c9f3af5a0ad7c25120103f75d383e9e91a15d7d498670",
+      "base_sha256": null
+    }
+  ],
+  "version": "0.18.0",
+  "base_commit": "1daf176d0fc6405145be847c20c78a3130d68ae8"
+}

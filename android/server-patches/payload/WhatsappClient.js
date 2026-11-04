@@ -22,12 +22,13 @@ const { db: getDb } = require("./connect.js");
 const clients = {}
 const authenticatedClients = {}
 const qrcodes = {}
-let q20ContactCache=null,q20ContactCacheAt=0,q20ContactRequest=null;
-async function q20CachedContacts(){
-    if(q20ContactCache && Date.now()-q20ContactCacheAt<60000)return q20ContactCache;
-    if(!q20ContactRequest)q20ContactRequest=client.getContacts().then(contacts=>{q20ContactCache=contacts;q20ContactCacheAt=Date.now();return contacts;}).finally(()=>{q20ContactRequest=null;});
-    return q20ContactRequest;
-}
+const { createContactCache, readCompactContacts } = require('./q20ContactCache');
+const q20Contacts = createContactCache({
+    load: () => client.pupPage.evaluate(readCompactContacts),
+    fallback: async () => (await getDb().all("SELECT chat_jid,display_name FROM q20_conversations WHERE chat_type='chat' AND display_name<>'' AND (chat_jid LIKE '%@c.us' OR chat_jid LIKE '%@lid')"))
+        .map(row => ({ id: { _serialized: row.chat_jid }, name: row.display_name, isWAContact: true }))
+});
+async function q20CachedContacts(){ return q20Contacts.get(); }
 
 
     let currentQr = null;
@@ -578,11 +579,11 @@ async function getContacts(mobileNumber, searchTerm, page, pageSize) {
 
         console.log(`page: ${page}, pageSize: ${pageSize}, startIndex: ${startIndex}, endIndex: ${endIndex}, count: ${filteredContacts2.length}`);
 
-        return { status: 200, data: { contacts: filteredContacts2.slice(startIndex, endIndex), count: filteredContacts2.length } };
+        return { status: 200, data: { contacts: filteredContacts2.slice(startIndex, endIndex), count: filteredContacts2.length, contact_cache: q20Contacts.status() } };
 
     } catch (error){
-        console.log(error);
-        return { status: 500, data: { error: error.message } };
+        if(error.status !== 503)console.log(error);
+        return { status: error.status || 500, data: { error: error.message, contact_cache: q20Contacts.status() } };
     }
 }
 

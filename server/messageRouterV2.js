@@ -196,7 +196,7 @@ function findMediaSource(row,id) {
 router.get('/health', (req, res) => {
     const account = getAccount();
     const client = getWhatsAppClient();
-    res.json({ ok: true, connected: account.status.isAuthenticated, server_version: '0.13.0',
+    res.json({ ok: true, connected: account.status.isAuthenticated, server_version: '0.18.0',
         capabilities: { direct_voice_calls: typeof client.call === 'function',
             call_status: typeof client.getActiveCall === 'function', media_download: true, q20_video_copy: true } });
 });
@@ -276,7 +276,7 @@ router.get('/contacts', async (req, res) => {
                     (SELECT lid_jid FROM q20_jid_mappings WHERE phone_jid=?)`, [contact.name, contact.id]);
             }
         }
-        return res.json({ contacts, count, page, has_more: ((page + 1) * limit) < count });
+        return res.json({ contacts, count, page, has_more: ((page + 1) * limit) < count, contact_cache: data.contact_cache });
     } catch (error) { return res.status(500).json({ error: error.message }); }
 });
 

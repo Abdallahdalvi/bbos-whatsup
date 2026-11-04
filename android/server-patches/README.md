@@ -1,3 +1,7 @@
+# Backend 0.18 staging follow-up
+
+The focused contacts/browser-timeout patch is in server/staging-patch in the repository and Q20Messenger-server-0.18-staging-patch.zip in the delivered output. Use its staging-only applier on an isolated source copy. Keep the 0.17 APK. The Docker updater template now requires an explicitly labelled staging container and refuses ordinary/live containers. The older updater workflow below is historical; use the focused staging applier for this follow-up.
+
 Current CasaOS 0.13 deployment: transfer the matching Q20Messenger-update-server.sh and run sudo bash Q20Messenger-update-server.sh nokia4ever. It embeds the complete matching payload; install the 0.13 APK too. The source patch workflow below is for a staging source copy.
 
 # Q20 Messenger Nokia4Ever v2 server integration
@@ -38,3 +42,5 @@ The script installs files from `payload/` and creates `.before-q20-v2-patch` bac
 - Media thumbnails are fetched lazily. The app opens a cached Q20-friendly 480-height copy first, offers Original and Save, and preserves source aspect ratio. A legacy 3GP rendition may still exist for older Nokia clients.
 
 See `API_DOCUMENTATION.md`, `HISTORY_IMPORT_REPORT.md`, and `TEST_REPORT.md` for endpoint details, boundaries, and local check results. Local stub tests do not prove real-account call link behavior, media quality, or delivery.
+
+

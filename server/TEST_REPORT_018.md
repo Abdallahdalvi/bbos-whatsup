@@ -1,0 +1,14 @@
+# Backend 0.18 staging validation
+
+The owner-provided logs repeatedly show Puppeteer `Runtime.callFunctionOn` timeouts from `Client.getContacts -> q20CachedContacts -> getContacts -> /contacts`. The accompanying snapshot showed 0.13% CPU and 579.1 MiB used out of a 31.22 GiB container memory limit. That snapshot does not demonstrate resource pressure at the time, and does not exclude an earlier spike or a stalled browser. No contact or phone identifiers from the logs are retained here.
+
+The pinned library source was inspected: its full getContacts path awaits BusinessProfile.find for business/enterprise contacts and serializes each full contact model. The new compact snapshot bypasses that path and only reads IDs and cached names. Missing contact metadata is not fabricated. Saved conversation names provide a cold-start fallback when available.
+
+Contact reads retain one original browser request until it settles, including after the four-second HTTP deadline; timing out an API response does not cancel a CDP evaluation. Cold failures return 503 with backoff, while existing snapshots/stored names return with stale metadata. Default TTL is 15 minutes and retry delay is 60 seconds. Diagnostics use one pending browser request and a 4.5-second response deadline. Browser protocolTimeout was not increased: longer waits do not establish browser health.
+
+Checks: seven focused Node tests pass (concurrent reads; stale single-flight; bounded cold failure/backoff; stored names after failure; compact snapshot without profile serialization; diagnostics deadline/reuse/recovery; unchanged legacy paged-contact response). Existing call bridge, outgoing business-confirmation, cancellation, late-call cleanup and low-latency audio fixtures pass. These are mocked browser/call fixtures, not real WhatsApp calls.
+
+The staging applier passed dry-run, known-base application, repeat application, and rejection of an unrecognized edited base. The fixture confirmed byte-for-byte preservation of server.js, legacy messageRouter.js, connect.js, dummy authentication and database files. The Docker template requires a staging label before it performs changes. No application process, container or browser was launched against the owner's account. No live Docker, authentication, database or media content was modified. This patch is proposed for isolated staging and is not declared production-ready: the original incoming-call failure needs real-account staging acceptance.
+
+Sources: https://pptr.dev/api/puppeteer.connectoptions documents protocolTimeout as the per-CDP-call deadline (default 180 seconds). https://pptr.dev/api/puppeteer.page documents that evaluate awaits returned promises. The exact business-profile behavior was confirmed in the locally installed pinned fork, not inferred from current upstream documentation.
+
