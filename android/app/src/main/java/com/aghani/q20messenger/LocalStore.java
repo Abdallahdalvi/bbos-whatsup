@@ -277,6 +277,7 @@ public final class LocalStore extends SQLiteOpenHelper {
         return getMessages(chatJid,limit,beforeTimestamp,Long.MAX_VALUE);
     }
     public ArrayList<JSONObject> getMessages(String chatJid,int limit,long beforeTimestamp,long beforeId) {
+        chatJid=resolveChatJid(chatJid);
         ArrayList<JSONObject> result = new ArrayList<JSONObject>();
         Cursor c = getReadableDatabase().rawQuery(
                 "SELECT server_id,wa_message_id,chat_jid,sender_jid,receiver_jid,participant_jid,sender_name,body,message_type,timestamp,status,from_me,media_filename,media_original_filename,mime_type,media_size,media_download_status,reply_to_id,link_url,rich_json FROM messages WHERE chat_jid=? AND (timestamp<? OR (timestamp=? AND server_id<?)) ORDER BY timestamp DESC,server_id DESC LIMIT ?",

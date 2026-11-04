@@ -6,6 +6,7 @@ public class DeclineCallReceiver extends BroadcastReceiver {
     @Override public void onReceive(final Context context, Intent intent) {
         final String id = intent.getStringExtra("call_id");
         if (id == null || id.length() == 0) return;
+        context.startService(new Intent(context,IncomingCallService.class).setAction("silence"));
         ((android.app.NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE)).cancel(201);
         final PendingResult pending = goAsync();
         new Thread(new Runnable() {

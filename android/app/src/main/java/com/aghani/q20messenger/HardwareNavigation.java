@@ -14,11 +14,13 @@ final class HardwareNavigation {
         if(view instanceof android.widget.AdapterView)return;
         if(!(view instanceof ViewGroup) && view.isClickable() && !(view instanceof android.widget.EditText)){
             view.setFocusable(true);
+            view.setFocusableInTouchMode(true);
             if(!(view.getBackground() instanceof StateListDrawable)){
                 Drawable original=view.getBackground();
                 int left=view.getPaddingLeft(),top=view.getPaddingTop(),right=view.getPaddingRight(),bottom=view.getPaddingBottom();
                 StateListDrawable states=new StateListDrawable();
-                android.graphics.drawable.GradientDrawable focus=Ui.rounded(0x4438b978,5,view.getContext());
+                android.graphics.drawable.GradientDrawable focus=Ui.rounded(0x00000000,5,view.getContext());
+                focus.setStroke(Ui.dp(view.getContext(),1),0xff21c063);
                 Drawable base=original==null?new android.graphics.drawable.ColorDrawable(0):original.getConstantState()!=null?original.getConstantState().newDrawable().mutate():original;
                 Drawable focused=new android.graphics.drawable.LayerDrawable(new Drawable[]{base,focus});
                 states.addState(new int[]{android.R.attr.state_focused},focused);
@@ -50,6 +52,8 @@ final class HardwareNavigation {
         MotionState state=motions.get(activity);if(state==null){state=new MotionState();motions.put(activity,state);}
         long now=event.getEventTime();if(now-state.last>180){state.axis=0;state.x=0;state.y=0;}state.last=now;
         state.x+=Math.max(-1f,Math.min(1f,event.getX()));state.y+=Math.max(-1f,Math.min(1f,event.getY()));
+        // A deliberate downward turn must escape a previous horizontal gesture.
+        if(state.axis==1&&Math.abs(event.getY())>0.2f&&Math.abs(event.getY())>Math.abs(event.getX())*2.5f){state.axis=2;state.x=0;}
         if(state.axis==0){if(Math.abs(state.y)>Math.abs(state.x)*1.35f)state.axis=2;else if(Math.abs(state.x)>Math.abs(state.y)*1.6f)state.axis=1;}
         float amount=state.axis==2?state.y:state.axis==1?state.x:0;
         if(Math.abs(amount)<0.65f||now-state.lastStep<(state.axis==1?160:65))return true;

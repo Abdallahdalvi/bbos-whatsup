@@ -1,26 +1,16 @@
-# Q20 Messenger 0.14.0-beta test report
+# Q20 Messenger 0.15.0-beta validation
 
-Date: 2026-11-04. Android versionCode 14, minimum/target API 18. This release is an Android-only update for the already deployed Nokia4Ever 0.13 backend.
+Android-only update for the existing Nokia4Ever 0.13 backend. Minimum and target SDK: 18.
 
-## Build and automated checks
+Changes: explicit header/search/tab/list focus transitions, focusable tabs in touch mode, per-row highlight backgrounds, native incoming ringtone, Wi-Fi retention during listening, a restart watchdog, timed screen wake, one-second call polling with bounded network waits, and ringtone stop on Answer/Decline. Chat opening and list resumption no longer query SQLite on the UI thread; emoji index initialization and preference disk writes run asynchronously. Cached history reads retain alias resolution and handle database read failures without throwing out of AsyncTask.
 
-- Signed APK built successfully as `Q20Messenger.apk` (15,463,502 bytes). The project build script validated its APK signature and API 18 manifest settings.
-- Unit tests: 35 passed, 1 skipped, 0 failed (Robolectric; API 19 runtime). The skipped test captures a native screenshot that is unsupported on this Windows host.
-- Android lint passed.
-- Navigation checks cover top-positioned tabs, focus limited to one chat row, trackpad axis handling, and switching tabs only after moving focus to the tab bar.
-- Cache and notification checks cover immediate local cached-chat display, bounded cache invalidation, new-message deduplication, suppressing alerts for old/history-imported and own messages, current-chat suppression, silent/vibrate/normal sound modes, incoming-call Answer/Decline actions, and not auto-answering a call before Answer is chosen.
-- The SQLite database remains the full local history store. The in-memory preview cache is bounded (6 MiB, recent 100-message pages); it does not preload every message or media file into RAM.
+The regression suite covers navigation out of the settings/search header, cache behavior, call notification intents, silent mode, Answer/Decline flow, boot startup, existing history/document/media behavior and PCM resampling. Full regression run: 37 passed, 1 native screenshot test skipped, zero failures. Lint and APK assembly passed. The final targeted background/navigation run also passed (10 tests); lint and assembly passed again after the idle-vibration correction.
 
-## Background behavior and limits
+The server's read-only diagnostics contained older 0.12 physical-Q20 toast crashes, already addressed by the custom toast implementation, and test-runtime records. There was no new physical-Q20 0.14 crash report. The owner reports random termination across actions and suspects RAM use. Memory pressure/process termination is plausible, but no device heap measurement or system kill log is available; resolution is not claimed as device-verified.
 
-The app starts a foreground listener with an ongoing notification. When enabled, it polls for calls and runs the existing sync coordinator while the app is in the background. New messages generate Android notifications and incoming calls generate an actionable notification/full-screen activity request. Sound/vibration follow the phone's ringer mode, and notifications are suppressed for the chat currently open. The listener restarts after boot or package replacement when the user has not stopped it.
+Physical Q20 verification remains required for tap-to-screen latency, trackpad feel, incoming ringing while the app is visible/backgrounded and while the phone sleeps. No device is attached. Keeping Wi-Fi/CPU awake increases battery use. Android force-stop still prevents background delivery until the app opens again. The APK uses the existing development signing key and configured private API token; personalized APKs are not uploaded to the public repository.
 
-This was verified by source-level/Robolectric tests, not on a physical Q20. Android may defer or suppress full-screen presentation, background activity launches, sound, or service restarts depending on the BlackBerry Android Runtime, device settings, process termination, and network reachability. A force-stopped app cannot receive broadcasts until opened again. Physical Q20 acceptance is still required for closed-app ringing, message alert sound, trackpad feel, battery use, and resource pressure.
+Memory follow-up: chat thumbnail cache reduced to 2 MiB; at most eight thumbnail requests are queued per chat, targets are bounded, and queued downloads are cancelled/purged on screen destruction. All thumbnail variants are decoded with sampling and RGB565. A regression image checks oversized-thumbnail decoding. Recent-page cache reduced to 3 MiB with eight preloaded chats and trimming on memory callbacks. History browsing keeps a rolling window of 400 messages while retaining all rows in SQLite; use Refresh or reopen to return to the latest messages. Network polling pauses while browsing older history.
 
-## Backend/history state
 
-No server source, container, WhatsApp authentication, or database was changed for 0.14. The connected server was reported at 0.13 before this Android-only build. The latest server history status reported 445 conversations total, 417 completed, 8,006 messages imported, 27 waiting for phone history, and one retry/error; these are server-reported counts, not a claim of complete account history. No additional server sync was performed by this build.
 
-## Device acceptance recommended
-
-Install the APK over the existing app. Leave background listening enabled, exit the app, then test incoming call and message notifications; separately test notification sound in normal/vibrate/silent modes. Check tab focus and trackpad scrolling at the physical square display. Confirm app remains responsive after opening chats with long histories. Report any failures with the listener notification state and server version.

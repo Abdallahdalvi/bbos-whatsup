@@ -80,7 +80,7 @@ public class CallActivity extends BaseActivity {
         callId = getIntent().getStringExtra("call_id");
         boolean incoming = getIntent().getBooleanExtra("incoming", false);
         historyIncoming = incoming;
-        if (incoming) ((android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE)).cancel(201);
+        if (incoming) { ((android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE)).cancel(201);startService(new android.content.Intent(this,IncomingCallService.class).setAction("silence")); }
         if (peerJid == null) peerJid = "";
         if (peerName == null || peerName.length() == 0) peerName = "WhatsApp contact";
         String savedName=LocalStore.get(this).getChatName(peerJid);
@@ -357,3 +357,4 @@ public class CallActivity extends BaseActivity {
         super.onDestroy();
     }
 }
+

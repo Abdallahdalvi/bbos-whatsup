@@ -12,9 +12,9 @@ public final class AppPrefs {
     private AppPrefs() { }
 
     public static boolean backgroundEnabled(Context context){return preferences(context).getBoolean("background_enabled",true);}
-    public static void setBackgroundEnabled(Context context,boolean enabled){preferences(context).edit().putBoolean("background_enabled",enabled).commit();}
+    public static void setBackgroundEnabled(Context context,boolean enabled){preferences(context).edit().putBoolean("background_enabled",enabled).apply();}
     public static boolean isDark(Context context) { return preferences(context).getBoolean("dark_theme", true); }
-    public static void setDark(Context context, boolean dark) { preferences(context).edit().putBoolean("dark_theme", dark).commit(); }
+    public static void setDark(Context context, boolean dark) { preferences(context).edit().putBoolean("dark_theme", dark).apply(); }
 
     public static String getServerUrl(Context context) {
         return preferences(context).getString(KEY_SERVER, "http://192.168.0.107:8034");
@@ -33,11 +33,11 @@ public final class AppPrefs {
         preferences(context).edit()
                 .putString(KEY_SERVER, cleanServer(serverUrl))
                 .putString(KEY_PHONE, digits(phoneNumber))
-                .commit();
+                .apply();
     }
 
     public static void saveApiToken(Context context, String token) {
-        preferences(context).edit().putString(KEY_API_TOKEN, token == null ? "" : token.trim()).commit();
+        preferences(context).edit().putString(KEY_API_TOKEN, token == null ? "" : token.trim()).apply();
     }
 
     public static String cleanServer(String value) {
@@ -60,3 +60,4 @@ public final class AppPrefs {
         return context.getSharedPreferences(FILE, Context.MODE_PRIVATE);
     }
 }
+

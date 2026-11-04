@@ -16,16 +16,18 @@ public final class EmojiText {
         final HashMap<Integer, Node> next = new HashMap<Integer, Node>();
         String asset;
     }
-    private static Node root;
+    private static volatile Node root;
+    private static final java.util.concurrent.atomic.AtomicBoolean warming=new java.util.concurrent.atomic.AtomicBoolean();
+    static void warm(final Context context){if(root==null&&warming.compareAndSet(false,true))AppExecutors.PRELOAD.execute(new Runnable(){public void run(){initialize(context.getApplicationContext());}});}
     private static final LruCache<String, android.graphics.Bitmap> cache = new LruCache<String, android.graphics.Bitmap>(150);
     private static synchronized void initialize(Context context) {
         if (root != null) return;
-        root = new Node();
+        Node built = new Node();
         try {
             BufferedReader reader = new BufferedReader(new InputStreamReader(context.getAssets().open("emoji/index.txt"), "UTF-8"));
             String line;
             while ((line = reader.readLine()) != null) {
-                Node node = root;
+                Node node = built;
                 for (String point : line.trim().split("-")) {
                     int cp = Integer.parseInt(point, 16);
                     Node child = node.next.get(cp);
@@ -36,6 +38,7 @@ public final class EmojiText {
             }
             reader.close();
         } catch (Exception ignored) { }
+        root=built;
     }
 
     public static CharSequence render(Context context, CharSequence value, int size) {
@@ -43,7 +46,7 @@ public final class EmojiText {
         boolean possible=false;
         for(int i=0;i<text.length();i++){char c=text.charAt(i);if(c>=0x2000||c==0x00a9||c==0x00ae){possible=true;break;}}
         if(!possible)return value==null?"":value;
-        initialize(context);
+        if(root==null){warm(context);return value==null?"":value;}
         SpannableStringBuilder output = new SpannableStringBuilder(value == null ? "" : value);
         for (int start = 0; start < text.length();) {
             Node node = root;

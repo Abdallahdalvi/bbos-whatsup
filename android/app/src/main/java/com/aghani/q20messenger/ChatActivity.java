@@ -45,7 +45,7 @@ public class ChatActivity extends BaseActivity {
     private TextView status;
     private MessageAdapter adapter;
     private final ArrayList<JSONObject> messages = new ArrayList<JSONObject>();
-    private final LruCache<String, Bitmap> mediaThumbs = new LruCache<String, Bitmap>(4 * 1024 * 1024) {
+    private final LruCache<String, Bitmap> mediaThumbs = new LruCache<String, Bitmap>(2 * 1024 * 1024) {
         protected int sizeOf(String key, Bitmap value) { return value.getByteCount(); }
     };
     private final HashSet<String> thumbnailsLoading = new HashSet<String>();
@@ -53,6 +53,9 @@ public class ChatActivity extends BaseActivity {
     private AudioPlaybackController audioPlayback;
     private boolean selectedAsDocument;
     private boolean loading = false;
+    private boolean browsingHistory;
+    private volatile boolean destroyed;
+    private final ArrayList<AsyncTask<Void,Void,Bitmap>> thumbnailTasks=new ArrayList<AsyncTask<Void,Void,Bitmap>>();
     private boolean sending = false;
     private MediaRecorder recorder;
     private File recordingFile;
@@ -94,7 +97,7 @@ public class ChatActivity extends BaseActivity {
         }
         ownJid = AppPrefs.ownJid(this);
         store = LocalStore.get(this);
-        peerJid=store.resolveChatJid(peerJid);
+        // Database readers resolve aliases without blocking screen creation.
         String savedName=ConversationCache.name(peerJid);if(savedName.length()>0)peerName=savedName;
         audioPlayback = new AudioPlaybackController(this);
         buildScreen();
@@ -198,11 +201,13 @@ public class ChatActivity extends BaseActivity {
     }
 
     private void loadMessages(final boolean showStatus) {
+        if(destroyed||(!showStatus&&browsingHistory))return;
         if (loading || peerJid.length() == 0) return;
+        if(showStatus)browsingHistory=false;
         loading = true;
         if(messages.isEmpty())renderCachedMessages();
         if (showStatus) status.setText(messages.isEmpty() ? "Connecting…" : "Updating conversation");
-        final int loadedLimit=Math.max(100,messages.size());
+        final int loadedLimit=showStatus?100:Math.min(400,Math.max(100,messages.size()));
 
         new AsyncTask<Void, Void, MessageResult>() {
             protected MessageResult doInBackground(Void... params) {
@@ -212,14 +217,15 @@ public class ChatActivity extends BaseActivity {
                     JSONArray remote = response.optJSONArray("messages");
                     if (remote != null) store.upsertMessages(remote);
                 } catch (Exception error) { result.error = error.getMessage(); }
-                result.items = store.getMessages(peerJid, loadedLimit, Long.MAX_VALUE);
+                try { result.items = store.getMessages(peerJid, loadedLimit, Long.MAX_VALUE); }
+                catch(Exception failure){result.error=failure.getMessage();result.items=new ArrayList<JSONObject>();}
                 ConversationCache.remember(peerJid,result.items);
                 return result;
             }
 
             protected void onPostExecute(MessageResult result) {
                 loading = false;
-                if(isFinishing())return;
+                if(destroyed||isFinishing())return;
                 noMoreOlder=false;
                 boolean changed=!messages.toString().equals(result.items.toString());
                 boolean atBottom=messageList.getLastVisiblePosition()>=messages.size()-3;
@@ -237,8 +243,8 @@ public class ChatActivity extends BaseActivity {
         ArrayList<JSONObject> ready=ConversationCache.messages(peerJid);
         if(ready!=null&&!ready.isEmpty()){messages.clear();messages.addAll(ready);adapter.notifyDataSetChanged();messageList.setSelection(messages.size()-1);status.setVisibility(View.GONE);return;}
         new AsyncTask<Void,Void,ArrayList<JSONObject>>(){
-            protected ArrayList<JSONObject> doInBackground(Void... ignored){ArrayList<JSONObject> cached=store.getMessages(peerJid,100,Long.MAX_VALUE);ConversationCache.remember(peerJid,cached);return cached;}
-            protected void onPostExecute(ArrayList<JSONObject> cached){if(isFinishing()||!messages.isEmpty()||cached.isEmpty())return;messages.addAll(cached);adapter.notifyDataSetChanged();messageList.setSelection(messages.size()-1);status.setVisibility(View.GONE);}
+            protected ArrayList<JSONObject> doInBackground(Void... ignored){try{ArrayList<JSONObject> cached=store.getMessages(peerJid,100,Long.MAX_VALUE);ConversationCache.remember(peerJid,cached);return cached;}catch(Exception failure){return new ArrayList<JSONObject>();}}
+            protected void onPostExecute(ArrayList<JSONObject> cached){if(destroyed||isFinishing()||!messages.isEmpty()||cached.isEmpty())return;messages.addAll(cached);adapter.notifyDataSetChanged();messageList.setSelection(messages.size()-1);status.setVisibility(View.GONE);}
         }.executeOnExecutor(AppExecutors.DATABASE);
     }
 
@@ -273,6 +279,7 @@ public class ChatActivity extends BaseActivity {
     private boolean noMoreOlder;
     private void loadOlderMessages() {
         if (loadingOlder || noMoreOlder || messages.isEmpty()) return;
+        browsingHistory=true;
         loadingOlder = true;
         final long before = messages.get(0).optLong("timestamp_ms", Long.MAX_VALUE);
         final long beforeId = messages.get(0).optLong("_id", Long.MAX_VALUE);
@@ -287,6 +294,7 @@ public class ChatActivity extends BaseActivity {
                 return cached;
             }
             protected void onPostExecute(ArrayList<JSONObject> older) {
+                if(destroyed||isFinishing())return;
                 loadingOlder = false;
                 if (older == null || older.isEmpty()) { noMoreOlder = true; return; }
                 if (older.size() < 100) noMoreOlder = true;
@@ -294,6 +302,7 @@ public class ChatActivity extends BaseActivity {
                 View first = messageList.getChildAt(0);
                 int offset = first == null ? 0 : first.getTop();
                 messages.addAll(0, older);
+                if(messages.size()>400)messages.subList(400,messages.size()).clear();
                 adapter.notifyDataSetChanged();
                 messageList.setSelectionFromTop(previousPosition + older.size(), offset);
             }
@@ -882,16 +891,19 @@ public class ChatActivity extends BaseActivity {
 
     private void loadMediaThumbnail(final JSONObject message, final ImageView target,
                                     final String key, final String type) {
+        if(destroyed)return;
+        if(!thumbnailsLoading.contains(key)&&thumbnailsLoading.size()>=8)return;
         ArrayList<java.lang.ref.WeakReference<ImageView>> targets = thumbnailTargets.get(key);
         if (targets == null) { targets = new ArrayList<java.lang.ref.WeakReference<ImageView>>(); thumbnailTargets.put(key, targets); }
-        targets.add(new java.lang.ref.WeakReference<ImageView>(target));
+        for(int i=targets.size()-1;i>=0;i--)if(targets.get(i).get()==null)targets.remove(i);
+        if(targets.size()<8)targets.add(new java.lang.ref.WeakReference<ImageView>(target));
         if (thumbnailsLoading.contains(key)) return;
         thumbnailsLoading.add(key);
-        new AsyncTask<Void, Void, Bitmap>() {
+        AsyncTask<Void,Void,Bitmap> task=new AsyncTask<Void, Void, Bitmap>() {
             protected Bitmap doInBackground(Void... params) {
                 try {
                     if (!"sticker".equals(type)) {
-                        try{File thumbnail = new ApiClient(ChatActivity.this).downloadVariant(message.optLong("_id", -1), "thumbnail", ".jpg");Bitmap result=BitmapFactory.decodeFile(thumbnail.getAbsolutePath());if(result!=null)return result;}
+                        try{File thumbnail = new ApiClient(ChatActivity.this).downloadVariant(message.optLong("_id", -1), "thumbnail", ".jpg");Bitmap result=decodeThumbnail(thumbnail);if(result!=null)return result;}
                         catch(Exception error){if(!"image".equals(type))throw error;}
                         if(!"image".equals(type))return null;
                     }
@@ -905,9 +917,12 @@ public class ChatActivity extends BaseActivity {
                     options.inSampleSize = sample;
                     options.inPreferredConfig = Bitmap.Config.RGB_565;
                     return BitmapFactory.decodeFile(media.getAbsolutePath(), options);
+                } catch (OutOfMemoryError pressure) { mediaThumbs.evictAll();return null;
                 } catch (Exception ignored) { return null; }
             }
             protected void onPostExecute(Bitmap bitmap) {
+                thumbnailTasks.remove(this);
+                if(destroyed)return;
                 thumbnailsLoading.remove(key);
                 ArrayList<java.lang.ref.WeakReference<ImageView>> targets = thumbnailTargets.remove(key);
                 if (bitmap != null) {
@@ -918,8 +933,9 @@ public class ChatActivity extends BaseActivity {
                     }
                 }
             }
-        }.executeOnExecutor(AppExecutors.THUMBNAILS);
+        };thumbnailTasks.add(task);task.executeOnExecutor(AppExecutors.THUMBNAILS);
     }
+    private Bitmap decodeThumbnail(File file){BitmapFactory.Options options=new BitmapFactory.Options();options.inJustDecodeBounds=true;BitmapFactory.decodeFile(file.getAbsolutePath(),options);int sample=1;while(options.outWidth/sample>440||options.outHeight/sample>440)sample*=2;options.inJustDecodeBounds=false;options.inSampleSize=sample;options.inPreferredConfig=Bitmap.Config.RGB_565;return BitmapFactory.decodeFile(file.getAbsolutePath(),options);}
 
     private void fitPreview(ImageView target, Bitmap bitmap) {
         target.setImageBitmap(bitmap);
@@ -959,6 +975,11 @@ public class ChatActivity extends BaseActivity {
 
     @Override
     protected void onDestroy() {
+        destroyed=true;
+        for(AsyncTask<Void,Void,Bitmap> task:thumbnailTasks)task.cancel(true);
+        if(AppExecutors.THUMBNAILS instanceof java.util.concurrent.ThreadPoolExecutor)((java.util.concurrent.ThreadPoolExecutor)AppExecutors.THUMBNAILS).purge();
+        thumbnailTasks.clear();thumbnailTargets.clear();thumbnailsLoading.clear();mediaThumbs.evictAll();
+        if(messageList!=null)messageList.setAdapter(null);
         if (audioPlayback != null) audioPlayback.close();
         if (recording) {
             try { if (recorder != null) recorder.stop(); } catch (Exception ignored) { }
@@ -974,3 +995,5 @@ public class ChatActivity extends BaseActivity {
         String error;
     }
 }
+
+

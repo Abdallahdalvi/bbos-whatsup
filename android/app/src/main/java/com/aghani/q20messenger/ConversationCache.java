@@ -5,7 +5,8 @@ final class ConversationCache {
  private static JSONArray chats,contacts,calls;private static long refreshedAt,revision;private static boolean warming;
  private static final HashSet<String> pending=new HashSet<String>();
  private static final class Page extends ArrayList<JSONObject>{final int bytes;Page(java.util.List<JSONObject> values){super(values);long estimate=128;for(JSONObject row:values)estimate+=512L+row.toString().length()*2L;bytes=(int)Math.min(Integer.MAX_VALUE,estimate);}}
- private static final LruCache<String,Page> pages=new LruCache<String,Page>(6*1024*1024){protected int sizeOf(String key,Page value){return value.bytes;}};
+ private static final LruCache<String,Page> pages=new LruCache<String,Page>(3*1024*1024){protected int sizeOf(String key,Page value){return value.bytes;}};
+ static synchronized void trim(){pages.evictAll();refreshedAt=0;}
  static synchronized void clear(){chats=null;contacts=null;calls=null;refreshedAt=0;revision++;pages.evictAll();pending.clear();}
  static synchronized JSONArray chats(){return chats;} static synchronized JSONArray contacts(){return contacts;} static synchronized JSONArray calls(){return calls;}
  static synchronized ArrayList<JSONObject> messages(String jid){ArrayList<JSONObject> found=pages.get(jid);return found==null?null:new ArrayList<JSONObject>(found);}
@@ -31,6 +32,7 @@ final class ConversationCache {
  }
  private static void warmRecent(Context context,final JSONArray list){
   synchronized(ConversationCache.class){if(warming)return;warming=true;}
-  final Context app=context.getApplicationContext();AppExecutors.PRELOAD.execute(new Runnable(){public void run(){try{for(int i=0;i<Math.min(20,list.length());i++){JSONObject item=list.optJSONObject(i);if(item!=null)warmOne(app,item.optString("sender"));}}catch(Exception ignored){}finally{synchronized(ConversationCache.class){warming=false;}}}});
+  final Context app=context.getApplicationContext();AppExecutors.PRELOAD.execute(new Runnable(){public void run(){try{for(int i=0;i<Math.min(8,list.length());i++){JSONObject item=list.optJSONObject(i);if(item!=null)warmOne(app,item.optString("sender"));}}catch(Exception ignored){}finally{synchronized(ConversationCache.class){warming=false;}}}});
  }
 }
+

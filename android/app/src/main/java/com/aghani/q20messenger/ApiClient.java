@@ -398,6 +398,7 @@ public class ApiClient {
         connection.setRequestMethod(method);
         connection.setConnectTimeout(10000);
         connection.setReadTimeout(30000);
+        if(path.equals("/api/v2/calls/status")){connection.setConnectTimeout(3000);connection.setReadTimeout(4000);}
         if (path.equals("/api/v2/calls/start") || path.equals("/api/v2/calls/confirm")) connection.setReadTimeout(45000);
         connection.setUseCaches(false);
         connection.setRequestProperty("Accept", "application/json, */*");

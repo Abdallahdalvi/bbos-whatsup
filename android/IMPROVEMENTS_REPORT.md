@@ -1,3 +1,14 @@
+Memory follow-up in 0.15: bounded thumbnail queue/targets, sampled decoding, cache release on chat destruction and system memory callbacks, 3 MiB recent-page cache, and a 400-message history window backed by SQLite.
+
+# Q20 Messenger 0.15.0-beta
+
+- Explicit Down routes from header to tabs and then chats; search can return to chats. Controls accept trackpad focus after touch input, and a deliberate vertical turn can escape an earlier horizontal gesture.
+- Individual solid chat-row selection replaces shared row selector state. Header focus uses an outline.
+- Remove SQLite reads from chat creation and list resumption; initialize the emoji index asynchronously, and write settings without waiting for disk.
+- Incoming listener retains Wi-Fi, polls every second with short timeouts and uses an alarm watchdog. Incoming alert wakes the screen for ten seconds and uses a native ringtone/vibration with explicit stop on answer/decline.
+- Database read errors in cached chat loading leave an empty/offline result instead of escaping the worker as an unhandled exception.
+
+See TEST_REPORT.md for device-validation limits and the unconfirmed crash report.
 # Q20 Messenger 0.14.0-beta — Android changes
 
 - Move the compact tab row below the app header and above search/chat content. Trackpad motion now follows its dominant axis; horizontal gestures while in the chat list do not change tabs. Move focus up to the tab bar, then use left/right to switch.
@@ -112,4 +123,6 @@ The following sections describe earlier releases.
 ## Validation
 
 Android compilation and signing, server syntax, HTTP contracts, and a mocked duplex PCM call-bridge test passed. The bridge test verifies both byte directions and hang-up lifecycle using a fake WhatsApp call. Real ringing/answer/audio quality still requires two live WhatsApp accounts and the target Q20; this environment has neither, so the call feature is not claimed as live-account verified. See `TEST_REPORT.md`.
+
+
 

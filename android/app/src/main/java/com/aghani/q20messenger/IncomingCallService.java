@@ -18,23 +18,34 @@ public class IncomingCallService extends Service {
     private ScheduledExecutorService syncWorker;
     private volatile boolean activeCall;
     private final java.util.concurrent.atomic.AtomicBoolean syncingMessages=new java.util.concurrent.atomic.AtomicBoolean();
-    private String ringingId = "";
+    private volatile String ringingId = "";
+    private volatile boolean destroyed;
+    private String silencedId = "";
     private NotificationManager notifications;
     private android.os.PowerManager.WakeLock listeningLock;
+    private android.net.wifi.WifiManager.WifiLock wifiLock;
+    private android.media.Ringtone ringtone;
+    private final android.os.Handler main=new android.os.Handler(android.os.Looper.getMainLooper());
+    private void watchdog(boolean enabled){android.app.AlarmManager alarm=(android.app.AlarmManager)getSystemService(ALARM_SERVICE);PendingIntent restart=PendingIntent.getService(this,7,new Intent(this,IncomingCallService.class),PendingIntent.FLAG_UPDATE_CURRENT);if(enabled)alarm.setInexactRepeating(android.app.AlarmManager.ELAPSED_REALTIME_WAKEUP,android.os.SystemClock.elapsedRealtime()+60000,60000,restart);else alarm.cancel(restart);}
+    private void silence(){if(ringtone!=null){ringtone.stop();ringtone=null;}((android.os.Vibrator)getSystemService(VIBRATOR_SERVICE)).cancel();}
+    private void ring(){if(ringingId.equals(silencedId))return;try{int mode=((android.media.AudioManager)getSystemService(AUDIO_SERVICE)).getRingerMode();if(mode==android.media.AudioManager.RINGER_MODE_NORMAL){if(ringtone==null){ringtone=android.media.RingtoneManager.getRingtone(this,android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_RINGTONE));if(ringtone!=null)ringtone.setStreamType(android.media.AudioManager.STREAM_RING);}if(ringtone!=null&&!ringtone.isPlaying())ringtone.play();}else if(ringtone!=null){ringtone.stop();ringtone=null;}}catch(RuntimeException ignored){}}
+
     @Override public void onCreate() {
         super.onCreate();
         if(!AppPrefs.backgroundEnabled(this)){stopSelf();return;}
         notifications = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         android.os.PowerManager power = (android.os.PowerManager) getSystemService(POWER_SERVICE);
         listeningLock = power.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "Q20Messenger:incoming-calls");
-        listeningLock.acquire();
+        listeningLock.setReferenceCounted(false);listeningLock.acquire();
+        try{android.net.wifi.WifiManager wifi=(android.net.wifi.WifiManager)getApplicationContext().getSystemService(WIFI_SERVICE);if(wifi!=null){wifiLock=wifi.createWifiLock(android.net.wifi.WifiManager.WIFI_MODE_FULL_HIGH_PERF,"Q20Messenger:incoming-wifi");wifiLock.setReferenceCounted(false);wifiLock.acquire();}}catch(RuntimeException ignored){}
+        watchdog(true);
         Intent open = new Intent(this, MainActivity.class);
         startForeground(200, new Notification.Builder(this).setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("Q20 Messenger").setContentText("Listening for calls and messages")
                 .setOngoing(true).setContentIntent(PendingIntent.getActivity(this, 0, open, PendingIntent.FLAG_UPDATE_CURRENT))
                 .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop listening", PendingIntent.getService(this, 4, new Intent(this, IncomingCallService.class).setAction("stop"), PendingIntent.FLAG_UPDATE_CURRENT)).build());
         worker = Executors.newSingleThreadScheduledExecutor();
-        worker.scheduleWithFixedDelay(new Runnable() { public void run() { checkCall(); } }, 0, 3, TimeUnit.SECONDS);
+        worker.scheduleWithFixedDelay(new Runnable() { public void run() { checkCall(); } }, 0, 1, TimeUnit.SECONDS);
         syncWorker=Executors.newSingleThreadScheduledExecutor();
         syncWorker.scheduleWithFixedDelay(new Runnable(){public void run(){
             if(activeCall||!AppPrefs.backgroundEnabled(IncomingCallService.this)||AppPrefs.getPhoneNumber(IncomingCallService.this).length()==0||AppPrefs.getServerUrl(IncomingCallService.this).length()==0||android.os.SystemClock.elapsedRealtime()-SyncCoordinator.lastFinishedAt()<2500||!syncingMessages.compareAndSet(false,true))return;
@@ -49,17 +60,21 @@ public class IncomingCallService extends Service {
         } catch (Exception ignored) { /* Keep the listener alive through transient network loss. */ }
     }
     void handleCall(JSONObject call) {
+        if(destroyed)return;
         activeCall=call.optBoolean("active");
             if (!call.optBoolean("active") || !call.optBoolean("incoming")) {
-                if(!call.optBoolean("active") && ringingId.length()>0) LocalStore.get(this).finishMissedCall(ringingId,"missed");
-                ringingId = ""; notifications.cancel(201); return;
+                if(!call.optBoolean("active") && ringingId.length()>0){final String missedId=ringingId;AppExecutors.DATABASE.execute(new Runnable(){public void run(){try{LocalStore.get(IncomingCallService.this).finishMissedCall(missedId,"missed");}catch(Exception ignored){}}});}
+                boolean wasRinging=ringingId.length()>0;
+                ringingId = ""; if(wasRinging)main.post(new Runnable(){public void run(){silence();}}); notifications.cancel(201); return;
             }
             String id = call.optString("call_id", "");
-            if (id.length() == 0 || id.equals(ringingId)) return;
+            if (id.length() == 0) return;
+            if(id.equals(ringingId)){main.post(new Runnable(){public void run(){ring();}});return;}
             ringingId = id;
             String peer = call.optString("peer", "");
-            String name = LocalStore.get(this).getChatName(peer);
-            LocalStore.get(this).saveCall(id,peer,name,"Incoming",System.currentTimeMillis(),0,0,"ringing");
+            String cachedName = ConversationCache.name(peer);
+            String name = cachedName.length()>0?cachedName:"WhatsApp contact";
+
             Intent answer = new Intent(this, CallActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             answer.putExtra("incoming", true); answer.putExtra("call_id", id);
             answer.putExtra("peer_jid", peer); answer.putExtra("peer_name", name);
@@ -73,22 +88,35 @@ public class IncomingCallService extends Service {
                     .addAction(android.R.drawable.ic_menu_call, "Answer", PendingIntent.getActivity(this, 2, answer, PendingIntent.FLAG_UPDATE_CURRENT))
                     .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Decline", PendingIntent.getBroadcast(this, 3, decline, PendingIntent.FLAG_UPDATE_CURRENT))
                     ;
-            MessageNotifications.applySound(this,builder,true);
+            // The service owns ringing on BB10; avoid a duplicate notification ringtone.
             Notification incoming=builder.build();
             incoming.flags |= Notification.FLAG_INSISTENT;
             notifications.notify(201, incoming);
             // API 18 permits the foreground listener to present incoming UI while the app is closed.
-            try{startActivity(popup);}catch(Exception ignored){}
+            final Intent incomingPopup=popup;
+            main.post(new Runnable(){public void run(){
+                if(destroyed)return;
+                ring();
+                if(((android.media.AudioManager)getSystemService(AUDIO_SERVICE)).getRingerMode()!=android.media.AudioManager.RINGER_MODE_SILENT)((android.os.Vibrator)getSystemService(VIBRATOR_SERVICE)).vibrate(new long[]{0,700,500},0);
+                try{android.os.PowerManager power=(android.os.PowerManager)getSystemService(POWER_SERVICE);android.os.PowerManager.WakeLock wake=power.newWakeLock(android.os.PowerManager.SCREEN_BRIGHT_WAKE_LOCK|android.os.PowerManager.ACQUIRE_CAUSES_WAKEUP,"Q20Messenger:ring");wake.acquire(10000);startActivity(incomingPopup);}catch(RuntimeException ignored){}
+            }});
+            final String savedId=id,savedPeer=peer,savedName=name;
+            AppExecutors.DATABASE.execute(new Runnable(){public void run(){try{LocalStore.get(IncomingCallService.this).saveCall(savedId,savedPeer,savedName,"Incoming",System.currentTimeMillis(),0,0,"ringing");}catch(Exception ignored){}}});
     }
     @Override public int onStartCommand(Intent intent, int flags, int id) {
+        if(intent!=null&&"silence".equals(intent.getAction())){silencedId=ringingId;silence();return START_STICKY;}
         if (intent != null && "stop".equals(intent.getAction())) { AppPrefs.setBackgroundEnabled(this,false); stopSelf(); return START_NOT_STICKY; }
         if(!AppPrefs.backgroundEnabled(this)){stopSelf();return START_NOT_STICKY;}
+        watchdog(true);
         return START_STICKY;
     }
     @Override public void onTaskRemoved(Intent root){if(AppPrefs.backgroundEnabled(this)){android.app.AlarmManager alarm=(android.app.AlarmManager)getSystemService(ALARM_SERVICE);alarm.set(android.app.AlarmManager.ELAPSED_REALTIME_WAKEUP,android.os.SystemClock.elapsedRealtime()+3000,PendingIntent.getService(this,7,new Intent(this,IncomingCallService.class),PendingIntent.FLAG_UPDATE_CURRENT));}super.onTaskRemoved(root);}
     @Override public IBinder onBind(Intent intent) { return null; }
     @Override public void onDestroy() {
+        destroyed=true;
         if(!AppPrefs.backgroundEnabled(this))((android.app.AlarmManager)getSystemService(ALARM_SERVICE)).cancel(PendingIntent.getService(this,7,new Intent(this,IncomingCallService.class),PendingIntent.FLAG_UPDATE_CURRENT));
+        main.removeCallbacksAndMessages(null);silence();
+        if(wifiLock!=null&&wifiLock.isHeld())wifiLock.release();
         if (worker != null) worker.shutdownNow();
         if(syncWorker!=null)syncWorker.shutdownNow();
         if (notifications != null) notifications.cancel(201);
@@ -96,3 +124,5 @@ public class IncomingCallService extends Service {
         super.onDestroy();
     }
 }
+
+

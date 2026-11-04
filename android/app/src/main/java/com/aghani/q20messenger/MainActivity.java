@@ -161,7 +161,7 @@ public class MainActivity extends BaseActivity {
         int selected = getResources().getColor(R.color.green_dark);
         int idle = getResources().getColor(R.color.ink);
         int[] ids={R.id.tab_chats,R.id.tab_groups,R.id.tab_contacts,R.id.tab_calls};
-        for(int i=0;i<ids.length;i++){Button button=(Button)findViewById(ids[i]);button.setBackgroundDrawable(Ui.tabBackground(this,i==tab));button.setTextColor(i==tab?selected:idle);button.setAlpha(1f);button.setTextSize(12);button.setIncludeFontPadding(false);button.setPadding(0,0,0,0);button.setCompoundDrawables(null,null,null,null);}
+        for(int i=0;i<ids.length;i++){Button button=(Button)findViewById(ids[i]);button.setFocusableInTouchMode(true);button.setBackgroundDrawable(Ui.tabBackground(this,i==tab));button.setTextColor(i==tab?selected:idle);button.setAlpha(1f);button.setTextSize(12);button.setIncludeFontPadding(false);button.setPadding(0,0,0,0);button.setCompoundDrawables(null,null,null,null);}
         search.setText("");
         list.requestFocus();
         if (tab == TAB_CONTACTS) loadContacts(); else loadLocalChats();
@@ -213,7 +213,7 @@ public class MainActivity extends BaseActivity {
     private void synchronize(final boolean showProgress) {
         if (syncing || AppPrefs.getApiToken(this).length() == 0) return;
         syncing = true;
-        if (showProgress) status.setText(store.isBootstrapComplete() ? "Syncing new messages…" : "Importing server history…");
+        if (showProgress) status.setText("Syncing messages…");
         new AsyncTask<Void, String, SyncCoordinator.Result>() {
             protected SyncCoordinator.Result doInBackground(Void... params) {
                 return SyncCoordinator.sync(MainActivity.this, new ApiClient(MainActivity.this), new SyncCoordinator.ProgressListener() {
@@ -319,7 +319,8 @@ public class MainActivity extends BaseActivity {
     }
 
     private int tabId(int tab){return new int[]{R.id.tab_chats,R.id.tab_groups,R.id.tab_contacts,R.id.tab_calls}[tab];}
-    private void refreshSelection(){for(int i=0;i<list.getChildCount();i++)list.getChildAt(i).setActivated(!tabNavigationFocused&&list.getFirstVisiblePosition()+i==navigationPosition);}
+    private void refreshSelection(){for(int i=0;i<list.getChildCount();i++)paintSelection(list.getChildAt(i),!tabNavigationFocused&&list.getFirstVisiblePosition()+i==navigationPosition);}
+    private void paintSelection(View row,boolean selected){row.setActivated(selected);row.setBackgroundColor(selected?getResources().getColor(R.color.selection):android.graphics.Color.TRANSPARENT);}
     private void focusTabs(){tabNavigationFocused=true;findViewById(tabId(currentTab)).requestFocus();refreshSelection();}
     private boolean atListTop(){return list.getFirstVisiblePosition()==0&&(list.getChildCount()==0||list.getChildAt(0).getTop()>=list.getPaddingTop());}
     private void selectForNavigation(int position,boolean scroll) {
@@ -331,8 +332,15 @@ public class MainActivity extends BaseActivity {
     }
     @Override public boolean dispatchKeyEvent(KeyEvent event) {
         int key=event.getKeyCode();boolean down=event.getAction()==KeyEvent.ACTION_DOWN;
-        if(search!=null&&search.hasFocus())return super.dispatchKeyEvent(event);
+        if(search!=null&&search.hasFocus()){
+            if(key==KeyEvent.KEYCODE_DPAD_DOWN){if(down){if(rows.isEmpty())list.requestFocus();else selectForNavigation(0,true);}return true;}
+            if(key==KeyEvent.KEYCODE_DPAD_UP){if(down)focusTabs();return true;}
+            return super.dispatchKeyEvent(event);
+        }
         View focus=getCurrentFocus();
+        if(findViewById(R.id.search_button).hasFocus()||findViewById(R.id.menu_button).hasFocus()||findViewById(R.id.new_chat).hasFocus()){
+            if(key==KeyEvent.KEYCODE_DPAD_DOWN){if(down)focusTabs();return true;}
+        }
         boolean tabFocus=tabNavigationFocused;
         for(int i=0;i<4;i++)if(findViewById(tabId(i)).hasFocus())tabFocus=true;
         if(tabFocus){
@@ -370,7 +378,7 @@ public class MainActivity extends BaseActivity {
         public long getItemId(int position) { return position; }
         public View getView(int position, View convertView, ViewGroup parent) {
             View row = convertView == null ? getLayoutInflater().inflate(R.layout.row_conversation, parent, false) : convertView;
-            row.setActivated(!tabNavigationFocused&&position==navigationPosition);
+            paintSelection(row,!tabNavigationFocused&&position==navigationPosition);
             JSONObject item = rows.get(position);
             boolean isContact = currentTab == TAB_CONTACTS;
             String jid = item.optString(isContact ? "id" : "sender", "");
@@ -405,3 +413,6 @@ public class MainActivity extends BaseActivity {
         return value != null && value.matches("\\+?[0-9][0-9 .()-]{5,}");
     }
 }
+
+
+
