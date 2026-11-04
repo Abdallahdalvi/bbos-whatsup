@@ -15,3 +15,6 @@ Android 0.17 works with the deployed 0.13 backend. The 0.18 server contacts/brow
 
 
 
+
+For isolated phone testing against backend 0.18, set Q20_STAGING_BUILD=true when building Android. This creates Q20 Messenger TEST as a separate application on port 8035. See android/STAGING_CLIENT_REPORT.md.
+

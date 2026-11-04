@@ -44,7 +44,7 @@ public class IncomingCallService extends Service {
         watchdog(true);
         Intent open = new Intent(this, MainActivity.class);
         startForeground(200, new Notification.Builder(this).setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("Q20 Messenger").setContentText("Listening for calls and messages")
+                .setContentTitle(BuildConfig.STAGING_BUILD ? "Q20 Messenger TEST" : "Q20 Messenger").setContentText("Listening for calls and messages")
                 .setOngoing(true).setContentIntent(PendingIntent.getActivity(this, 0, open, PendingIntent.FLAG_UPDATE_CURRENT))
                 .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop listening", PendingIntent.getService(this, 4, new Intent(this, IncomingCallService.class).setAction("stop"), PendingIntent.FLAG_UPDATE_CURRENT)).build());
         worker = Executors.newSingleThreadScheduledExecutor();

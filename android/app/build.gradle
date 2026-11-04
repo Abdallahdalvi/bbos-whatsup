@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
 }
+def q20StagingBuild = System.getenv('Q20_STAGING_BUILD') == 'true'
 
 android {
     namespace 'com.aghani.q20messenger'
@@ -9,12 +10,14 @@ android {
     compileSdk 34
 
     defaultConfig {
-        applicationId 'com.aghani.q20messenger'
+        applicationId q20StagingBuild ? 'com.aghani.q20messenger.staging' : 'com.aghani.q20messenger'
         minSdk 18
         targetSdk 18
         ndk { abiFilters 'armeabi-v7a', 'x86' }
         versionCode 17
-        versionName '0.17.0-beta'
+        versionName q20StagingBuild ? '0.17.0-beta-staging.018' : '0.17.0-beta'
+        manifestPlaceholders = [q20AppLabel: q20StagingBuild ? 'Q20 Messenger TEST' : 'Q20 Messenger']
+        buildConfigField 'boolean', 'STAGING_BUILD', q20StagingBuild.toString()
         // Optional per-user build-time value. It is deliberately not stored in
         // the source tree or ZIP; a value supplied to the build is extractable
         // from the APK and should only be used for a private, single-user build.

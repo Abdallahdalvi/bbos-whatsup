@@ -17,7 +17,7 @@ public final class AppPrefs {
     public static void setDark(Context context, boolean dark) { preferences(context).edit().putBoolean("dark_theme", dark).apply(); }
 
     public static String getServerUrl(Context context) {
-        return preferences(context).getString(KEY_SERVER, "http://192.168.0.107:8034");
+        return preferences(context).getString(KEY_SERVER, BuildConfig.STAGING_BUILD ? "http://192.168.0.107:8035" : "http://192.168.0.107:8034");
     }
 
     public static String getPhoneNumber(Context context) {

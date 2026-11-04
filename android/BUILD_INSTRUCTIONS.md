@@ -15,3 +15,8 @@ For a single-user personalized APK, set `Q20_API_TOKEN` in the build process bef
 ## Server connection
 
 The rebuilt client uses the authenticated `/api/v2` contract in `API_DOCUMENTATION.md`. Review and deploy `Q20Messenger-server-v2-patch.zip` separately and configure `Q20_API_TOKEN` on the server. The app stores the matching token locally in private preferences. The live server was not patched by this build. See `INSTALLATION.md` for setup.
+
+## Separate staging client
+
+Set Q20_STAGING_BUILD=true in the build environment to produce Q20 Messenger TEST with application ID com.aghani.q20messenger.staging and default port 8035. Leave the variable unset for the original application ID and port 8034. The TEST app installs alongside the original and has separate private history/settings. Include Q20_API_TOKEN for a personalized build; never publish that APK.
+

@@ -16,7 +16,7 @@
         android:largeHeap="true"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
-        android:label="Q20 Messenger"
+        android:label="${q20AppLabel}"
         android:theme="@style/AppTheme">
         <provider android:name="android.support.v4.content.FileProvider" android:authorities="${applicationId}.media" android:exported="false" android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/shared_media_paths" />
@@ -26,7 +26,7 @@
         <receiver android:name=".StartupReceiver" android:exported="true"><intent-filter><action android:name="android.intent.action.BOOT_COMPLETED"/><action android:name="android.intent.action.MY_PACKAGE_REPLACED"/></intent-filter></receiver>
         <activity android:name=".IncomingCallActivity" android:theme="@style/LegacyMediaTheme" android:exported="false" android:launchMode="singleTop" android:excludeFromRecents="true" android:configChanges="keyboardHidden|orientation|screenSize" />
 
-        <activity android:name=".MainActivity" android:windowSoftInputMode="stateAlwaysHidden|adjustResize" android:label="Q20 Messenger" android:exported="true" android:configChanges="keyboardHidden|orientation|screenSize">
+        <activity android:name=".MainActivity" android:windowSoftInputMode="stateAlwaysHidden|adjustResize" android:label="${q20AppLabel}" android:exported="true" android:configChanges="keyboardHidden|orientation|screenSize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

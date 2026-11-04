@@ -94,6 +94,7 @@ public class MainActivity extends BaseActivity {
 
     private void buildScreen() {
         setContentView(R.layout.activity_main);
+        if(BuildConfig.STAGING_BUILD)((TextView)findViewById(R.id.title)).setText("Q20 TEST · 8035");
         status = (TextView) findViewById(R.id.status);
         list = (ListView) findViewById(R.id.conversation_list);
         search = (EditText) findViewById(R.id.search_field);
